@@ -60,3 +60,9 @@ body.no-hints .desktop-controls,body.no-hints .touch-controls small{display:none
 .update-bar{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);display:flex;align-items:center;gap:12px;background:#fff9ed;border:2px solid #315c4926;border-radius:16px;padding:10px 12px 10px 16px;box-shadow:0 6px 0 #274b3422;font-weight:800;font-size:14px;color:#29463d;z-index:11}
 .update-bar button{min-height:40px;padding:0 16px;border-radius:12px;background:#285844;color:#fff9e8;font-weight:900}
 @media(max-width:760px){.update-bar{bottom:auto;top:78px;font-size:13px;max-width:calc(100vw - 24px)}}
+.caption{position:absolute;left:50%;bottom:120px;transform:translateX(-50%);max-width:min(760px,calc(100vw - 32px));background:#12241fe8;color:#fff8e8;font-size:19px;font-weight:800;line-height:1.4;padding:10px 18px;border-radius:14px;text-align:center;z-index:9;pointer-events:none}
+.story-world{margin-bottom:6px}.story{background:#fff;border:2px solid #315c4914;border-radius:14px;padding:12px 14px;margin-bottom:8px}
+.story h4{margin:0 0 6px;font-size:16px;color:#245444}.story p{margin:0;font-size:14px;line-height:1.5}
+.story.locked{background:#f3efe2;border-style:dashed}.story-locked{color:#6d7e71;font-style:italic}
+.story [data-story]{padding:10px 0 2px;font-size:14px}.story-hint{color:#5b6e60}
+@media(max-width:760px){.caption{font-size:16px;bottom:96px;padding:8px 14px}.story p{font-size:13px}}

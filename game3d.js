@@ -8,6 +8,8 @@ import {readPad,RUMBLE} from './input3d.js';
 import {SETTINGS_STORAGE,parseSettings,FOLLOW,ZOOM,followYaw} from './settings3d.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
 import {joinParty,makeRoomCode,normalizeCode,isCompleteCode,formatCode,pickName,easeRemote,NAMES,MAX_PLAYERS,CODE_LENGTH} from './multiplayer3d.js';
+import {STORIES,storyText,isStoryOpen,storiesForLevel,STORY_COUNT} from './stories3d.js';
+import {createVoice,parseManifest,captionForSound,lineId,VOICE_DIR} from './voice3d.js';
 const $=id=>document.getElementById(id),canvas=$('world');
 const STORAGE='superdog-island-3d-v4',LEGACY_STORAGE='superdog-island-3d-v3';
 let save=null;try{save=JSON.parse(localStorage.getItem(STORAGE)||localStorage.getItem(LEGACY_STORAGE)||'null');}catch{}
@@ -150,7 +152,7 @@ const trophy=new T.Group();rushStone.add(trophy);trophy.position.y=1.55;
 const trophyParts=[cylinder(0xcfd6d8,0,.12,0,.3,.42,trophy),cylinder(0xcfd6d8,0,-.18,0,.09,.22,trophy),cylinder(0xcfd6d8,0,-.32,0,.22,.07,trophy)];
 for(const s of [-1,1]){const h=new T.Mesh(new T.TorusGeometry(.13,.035,6,12),mat(0xcfd6d8));h.position.set(s*.33,.14,0);h.rotation.y=Math.PI/2;trophy.add(h);trophyParts.push(h);}
 const rushBones=game.world.RUSH.bones.map(b=>{const m=boneModel();m.traverse(o=>{if(o.isMesh)o.material=glowMat(0xffd166,0xffa31a,.55);});m.scale.setScalar(1.25);m.position.set(b.x,b.y,b.z);m.visible=false;scene.add(m);const beam=new T.Mesh(new T.CylinderGeometry(.1,.1,9,8,1,true),new T.MeshBasicMaterial({color:0xfff1a8,transparent:true,opacity:.28,depthWrite:false}));beam.position.set(b.x,4.5,b.z);beam.visible=false;scene.add(beam);return {data:b,mesh:m,beam};});
-function showRushResult(e){game.pause();updateCampaignUI();showModal('Bone Rush complete!',`<div class="results"><span>${e.time}<small>seconds</small></span><span>${e.best}<small>best time</small></span></div><p>${e.first?`<b>+${e.reward} bones</b> for your wardrobe. Try again to beat your best time!`:e.time<=e.best?'A new best time! Can you go even faster?':'Your best time still stands. One more try?'}</p>`,'Keep exploring',()=>{game.resume();canvas.focus();},false);speak(`Bone Rush complete in ${e.time} seconds!`);}
+function showRushResult(e){game.pause();updateCampaignUI();showModal('Bone Rush complete!',`<div class="results"><span>${e.time}<small>seconds</small></span><span>${e.best}<small>best time</small></span></div><p>${e.first?`<b>+${e.reward} bones</b> for your wardrobe. Try again to beat your best time!`:e.time<=e.best?'A new best time! Can you go even faster?':'Your best time still stands. One more try?'}</p>`,'Keep exploring',()=>{game.resume();canvas.focus();},false);voice.speak(lineId.ui('rushWon'));}
 // Friends who joined with the same code: their dogs, their names, and their barks.
 const friendViews=new Map();
 function friendCape(view,look){
@@ -288,7 +290,7 @@ updateDifficulty();
 function updateCampaignUI(){
  $('levelLabel').textContent=`${game.level+1}/5 · ${theme.name}`;$('bossName').textContent=theme.boss;
  $('levelDescription').textContent=`${game.level+1}. ${theme.name} — ${theme.subtitle}`;
- $('album').textContent=`✧ Secret album · ${game.secrets.size} / 10`;$('wardrobe').textContent=`◆ Wardrobe · ${game.bonesAvailable} bones to spend`;
+ $('album').textContent=`📖 Story book · ${openStoryCount()} / ${STORY_COUNT}`;$('wardrobe').textContent=`◆ Wardrobe · ${game.bonesAvailable} bones to spend`;
  $('nextLevel').hidden=game.boss.hp>0||game.level===4;
  $('levelPicker').innerHTML=LEVELS.map((l,i)=>`<button data-level="${i}" aria-label="${i+1}. ${l.name}${i>=game.unlocked?' — locked':''}" aria-pressed="${i===game.level}" ${i>=game.unlocked?'disabled':''}><span>${i>=game.unlocked?'🔒':i<game.unlocked-1?'✓':i+1}</span><small>${l.name}</small></button>`).join('');
  for(const b of $('levelPicker').children)b.onclick=()=>{if(Number(b.dataset.level)===game.level)return;changeLevel(Number(b.dataset.level),false);};
@@ -296,7 +298,7 @@ function updateCampaignUI(){
 function changeLevel(level,autostart=true){if(!game.selectLevel(level))return;storeSave();if(autostart)sessionStorage.setItem('superdog-autostart','1');location.reload();}
 function showVictory(){updateCampaignUI();showModal(game.level===4?'Five worlds saved!':'Giant defeated!',`<p><b>${theme.boss}</b> gives up. All three friends are free!</p><div class="results"><span><b class="bone-icon">◆</b> ${game.boneCount}<small>/ ${BONES.length} bones</small></span><span><b class="star">★</b> ${game.starCount}<small>/ 6 stars</small></span><span><b class="key">✧</b> ${game.secrets.size}<small>/ 10 secrets</small></span></div>${game.level===0?'<p><b>New power: cape glide!</b> Hold jump while falling to float across gaps.</p>':''}<p>${game.level<4?'New world unlocked: '+LEVELS[game.level+1].name+'. Revisit completed worlds from the main menu.':'Thanks for the adventure! Revisit any world to complete your secret album.'}</p>`,game.level<4?'Next world →':'Keep exploring',()=>{if(game.level<4)changeLevel(game.level+1);else{game.start();canvas.focus();}});}
  $('nextLevel').onclick=()=>changeLevel(game.level+1);
- $('album').onclick=()=>{showModal('Secret album',`<p>Found ${game.secrets.size} out of 10. Look for unusual floating objects with a golden ring. Walk over and press E. Two are hidden in each world.</p><div class="album-grid">${LEVELS.map((l,i)=>`<article><b>${i+1}. ${l.name}</b><p>${[0,1].map(j=>game.secrets.has(`egg-${i}-${j}`)?createWorld(i).EGGS[j].name:'Not found').join(' · ')}</p><small>${i>=game.unlocked?'Defeat the boss of the previous world first.':'Explore the western shores: the southern corner and the path behind the lighthouse.'}</small></article>`).join('')}</div>`,'Close album',()=>{},false);};
+ $('album').onclick=openStoryBook;
 updateCampaignUI();
 function openStudio(){let studio=null;showModal('Drawing studio',studioMarkup(!!drawing),'Put it on Super Dog!',()=>{const d=studio.result();if(!d){saveDrawing(null);toast('The paper was empty, so nothing changed.');return;}if(saveDrawing(d))toast(d.cape||d.flags?'Your drawing is on Super Dog’s '+(d.cape&&d.flags?'cape and flags!':d.cape?'cape!':'flags!'):'Drawing saved. Tick “On my cape” to wear it.');},false);studio=mountStudio($('modalBody'),drawing,{onRemove:()=>{saveDrawing(null);$('modal').hidden=true;toast('Your drawing was removed.');}});}
 // The wardrobe opens beside a turntable view of Super Dog so each choice is seen straight away.
@@ -373,13 +375,35 @@ function renderParty(){
 }
 function openParty(){const wasPlaying=game.status==='playing';game.pause();showModal('Play with friends','','Done',()=>{if(wasPlaying)game.resume();canvas.focus();},false);$('modal').classList.add('party');renderParty();}
 $('friends').onclick=openParty;$('partyHud').onclick=openParty;
+// The story book: stories open as worlds are reached, secrets found, and giants beaten.
+function storyState(){return {unlocked:game.unlocked,secrets:game.secrets,progress:{...game.progress,[game.level]:game.levelSnapshot()},level:game.level};}
+function openStoryCount(){return STORIES.filter(s=>isStoryOpen(s,storyState())).length;}
+function storyBookMarkup(){
+ const state=storyState();
+ return `<p>${openStoryCount()} of ${STORY_COUNT} stories opened. Reach a world, find a secret, or beat a giant to open more.</p>`+
+ LEVELS.map((level,i)=>`<section class="story-world"><h3 class="shelf">${i+1}. ${level.name}</h3>${storiesForLevel(i).map(story=>{
+  const open=isStoryOpen(story,state);
+  return `<article class="story${open?'':' locked'}"><h4>${open?story.title:'· · ·'}</h4>${open
+   ?`<p>${story.lines.join('<br>')}</p><button type="button" class="text-button" data-story="${story.id}">▶ Read it to me</button>`
+   :`<p class="story-locked">${story.kind==='secret'?'Hidden somewhere in this world.':story.kind==='victory'?'Beat the giant of this world.':'Reach this world.'}</p>`}</article>`;
+ }).join('')}</section>`).join('');
+}
+function openStoryBook(){
+ const wasPlaying=game.status==='playing';game.pause();
+ showModal('Story book','','Close the book',()=>{voice.stop();if(wasPlaying)game.resume();canvas.focus();},false);
+ $('modal').classList.add('storybook');$('modalBody').innerHTML=storyBookMarkup();
+ for(const button of $('modalBody').querySelectorAll('[data-story]'))button.onclick=()=>{
+  const story=STORIES.find(s=>s.id===button.dataset.story);if(!story)return;
+  for(const other of $('modalBody').querySelectorAll('[data-story]'))other.textContent='▶ Read it to me';
+  button.textContent='■ Stop reading';voice.stop();showCaption(storyText(story));voice.speak(story.id,storyText(story),{force:true});
+ };
+}
 function saveDrawing(d){try{if(d)localStorage.setItem(DRAWING_STORAGE,JSON.stringify(d));else localStorage.removeItem(DRAWING_STORAGE);}catch{toast('This browser could not save the drawing.');return false;}applyDrawing(d);return true;}
 $('draw').onclick=openStudio;$('drawCard').onclick=openStudio;
 const READ_STORAGE='superdog-read-aloud';let readAloud=(()=>{try{return localStorage.getItem(READ_STORAGE)==='on';}catch{return false;}})(),speechUntil=0;
-function speak(text){if(!readAloud||!text||!('speechSynthesis' in window))return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text.replace(/[◆★✧]/g,''));u.lang='en-US';u.rate=.95;u.pitch=1.1;speechSynthesis.speak(u);}catch{}}
 function updateReadAloud(){for(const b of document.querySelectorAll('[data-read-aloud]')){b.setAttribute('aria-pressed',String(readAloud));b.title=readAloud?'Reading aloud: on':'Read aloud: off';}}
-function toggleReadAloud(){readAloud=!readAloud;try{localStorage.setItem(READ_STORAGE,readAloud?'on':'off');}catch{}updateReadAloud();if(readAloud)speak($('speech').hidden?'Reading aloud is on.':$('speechText').textContent);else if('speechSynthesis' in window)speechSynthesis.cancel();}
-function showSpeech(name,text){if(!text)return;$('speaker').textContent=name;$('speechText').textContent=text;$('speech').hidden=false;speechUntil=performance.now()+Math.max(4200,text.length*75);speak(text);}
+function toggleReadAloud(){readAloud=!readAloud;try{localStorage.setItem(READ_STORAGE,readAloud?'on':'off');}catch{}updateReadAloud();if(readAloud)voice.speak(lineId.ui('welcome'));else voice.stop();}
+function showSpeech(name,text,id){if(!text)return;$('speaker').textContent=name;$('speechText').textContent=text;$('speech').hidden=false;speechUntil=performance.now()+Math.max(4200,text.length*75);voice.speak(id,text);}
 $('readAloud').onclick=toggleReadAloud;updateReadAloud();
 // A new version arrived while the game was open: take it now in the menu, or offer it during play.
 addEventListener('superdog-update',()=>{
@@ -387,6 +411,18 @@ addEventListener('superdog-update',()=>{
  $('updateBar').hidden=false;
 });
 $('updateNow').onclick=()=>location.reload();
+// Spoken lines and subtitles. Recordings play when present; otherwise the browser reads the words.
+let voiceManifest={voice:null,lines:{}},captionUntil=0;
+const voice=createVoice({manifest:voiceManifest,enabled:()=>readAloud,volume:()=>settings.sfx,
+ onCaption:text=>showCaption(text)});
+fetch(VOICE_DIR+'manifest.json').then(r=>r.ok?r.json():null).then(raw=>{if(raw)Object.assign(voiceManifest,parseManifest(raw));}).catch(()=>{});
+function showCaption(text,kind='speech'){
+ if(!text||settings.subtitles==='off'||(kind==='sound'&&settings.subtitles!=='always'))return;
+ $('caption').textContent=text;$('caption').hidden=false;
+ captionUntil=performance.now()+Math.max(2600,String(text).length*70);
+}
+function speak(text,id){voice.speak(id,text);}
+function speakStory(story){showCaption(storyText(story));voice.speak(story.id,storyText(story));}
 function toast(text){if(!text)return;$('toast').textContent=text;$('toast').classList.add('show');toastUntil=performance.now()+3800;}
 // Browsers only allow audio after a tap or key press, so the context is created on first use.
 let master=null,sfxBus=null,music=null,coinStreak=0,coinStreakUntil=0;const STREAK=[0,2,4,7,9,12,14,16,19,21,24];
@@ -428,6 +464,7 @@ ${sliderRow('Music volume','music',settings.music,0,1,.05)}
 ${sliderRow('Sound volume','sfx',settings.sfx,0,1,.05)}
 ${switchRow('Read stories and friends aloud','readAloud',readAloud)}
 ${switchRow('Show control hints','hints',settings.hints)}
+${choiceRow('Subtitles','subtitles',[['auto','Speech'],['always','Speech + sounds'],['off','Off']],settings.subtitles)}
 <p class="set-note">Press <kbd>C</kbd>, tap ◎, or click the right stick to put the camera behind Super Dog.</p>`;}
 function renderSettings(){$('modalBody').innerHTML=settingsMarkup();
  for(const el of $('modalBody').querySelectorAll('[data-set]')){const name=el.dataset.set;
@@ -441,7 +478,7 @@ $('settings').onclick=openSettings;
 let recenterT=0,padLooking=false;
 function recenterCamera(){recenterT=.55;}
 function resetInput(){pressed.clear();heldTouch?.clear();actions={};stick={x:0,z:0};drag=null;joystickPointer=null;$('joystick').firstElementChild.style.transform='';}
-function launch(){menuMode=false;$('menu').hidden=true;$('hud').hidden=false;$('pause').hidden=false;$('touch').hidden=!matchMedia('(pointer:coarse), (max-width:760px)').matches;game.start();ui();$('modal').hidden=true;resetInput();yaw=0;pitch=.35;camera.position.set(game.player.x,game.player.y+7,game.player.z+11);camBase.copy(camera.position);canvas.focus();storeSave();toast('WASD — move · Space twice to double jump · Drag the mouse to orbit');}
+function launch(){menuMode=false;const opening=STORIES.find(st=>st.kind==='world'&&st.level===game.level);if(opening&&readAloud)setTimeout(()=>speakStory(opening),900);$('menu').hidden=true;$('hud').hidden=false;$('pause').hidden=false;$('touch').hidden=!matchMedia('(pointer:coarse), (max-width:760px)').matches;game.start();ui();$('modal').hidden=true;resetInput();yaw=0;pitch=.35;camera.position.set(game.player.x,game.player.y+7,game.player.z+11);camBase.copy(camera.position);canvas.focus();storeSave();toast('WASD — move · Space twice to double jump · Drag the mouse to orbit');}
 function showModal(title,body,label,callback,secondary=true){resetInput();$('modal').classList.remove('wardrobe','settings','party');$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modalPrimary').textContent=label;modalAction=callback;$('modalSecondary').hidden=!secondary;$('modal').hidden=false;$('modalPrimary').focus({preventScroll:true});$('modal').firstElementChild.scrollTop=0;}
 function pause(){if(game.status!=='playing')return;game.pause();storeSave();showModal('Taking a break',`<p>Your discoveries and rescued friends are saved. The island will be here when you return!</p><p>Bones: <b>${game.boneCount}/${BONES.length}</b> · Stars: <b>${game.starCount}/6</b></p><p>Difficulty: <b>${game.rules.name}</b>. Change it in the main menu. Your discoveries stay saved; hearts and the current battle reset.</p>`,'Continue adventure',()=>{game.resume();canvas.focus();});$('modalBody').insertAdjacentHTML('beforeend','<button type="button" class="text-button" data-open-settings>⚙ Settings</button>');$('modalBody').querySelector('[data-open-settings]').onclick=openSettings;}
 $('play').onclick=launch;if((save?.version===3||save?.version===4)&&hasProgress(save)){$('play').firstChild.textContent='Continue adventure ';$('newGame').hidden=false;}
@@ -474,7 +511,7 @@ function frame(now){requestAnimationFrame(frame);const dt=Math.min((now-last)/10
   game.tick(dt,{x,z,yaw,...actions,glide:pressed.has('Space')||heldTouch.has('jump')||padMove.glide});actions={};
  }
  const frameEvents=game.events.splice(0);if(frameEvents.length)uiTime=1;
- for(const event of frameEvents){tone(event.type,event.type==='coin'?coinRatio(now):1);rumble(event.type);if(event.text&&event.type!=='talk')toast(event.text);if(event.type==='talk')showSpeech(event.speaker,event.text);if(event.type==='rescue')showSpeech(event.speaker,event.line);if(['coin','key','star','rescue','checkpoint','enemy','won','secret'].includes(event.type))storeSave();if(['coin','key','star','rescue','secret'].includes(event.type))burst(game.player.x,game.player.y+1,game.player.z,event.type==='rescue'?0xb9e98a:0xffdc72,event.type==='coin'?4:20);if(event.type==='jump'){squashAmt=.2;squashT=.2;}if(event.type==='dash'&&effectsOn())fovPunch=Math.min(10,fovPunch+6);if(effectsOn())trauma=Math.min(1,trauma+({hurt:.55,bossHit:.4,fall:.3,won:.35}[event.type]||0));if(event.type==='bark'){party?.bark();barkTime=.4;attackRing.position.set(game.player.x,game.player.y+.15,game.player.z);}if(event.type==='dead')showModal('Try again?',`<p>You keep your bones, keys, and rescued friends. Restart from the last flag.</p>`,'Return to checkpoint',()=>{game.retry();canvas.focus();});if(event.type==='secret'){game.pause();updateCampaignUI();showModal('Secret found!',`<p>${event.text}</p><p>${game.secrets.size} / 10 in your album.</p>`,'Keep exploring',()=>{game.resume();canvas.focus();},false);speak(event.text);}if(event.type==='rushWon'){confetti(game.player.x,game.player.y+1.6,game.player.z,50);setTimeout(()=>showRushResult(event),reduceMotion?200:900);}if(event.type==='rescue')confetti(game.player.x,game.player.y+1.5,game.player.z,24);if(event.type==='won'){victoryT=1.8;confetti(game.player.x,game.player.y+2,game.player.z,70);setTimeout(showVictory,reduceMotion?300:1700);}}
+ for(const event of frameEvents){tone(event.type,event.type==='coin'?coinRatio(now):1);rumble(event.type);if(event.text&&event.type!=='talk')toast(event.text);if(event.type==='talk')showSpeech(event.speaker,event.text,lineId.guide(game.level,event.index??0));if(event.type==='rescue')showSpeech(event.speaker,event.line,lineId.friend(game.level,event.index??0));showCaption(captionForSound(event.type),'sound');if(['coin','key','star','rescue','checkpoint','enemy','won','secret'].includes(event.type))storeSave();if(['coin','key','star','rescue','secret'].includes(event.type))burst(game.player.x,game.player.y+1,game.player.z,event.type==='rescue'?0xb9e98a:0xffdc72,event.type==='coin'?4:20);if(event.type==='jump'){squashAmt=.2;squashT=.2;}if(event.type==='dash'&&effectsOn())fovPunch=Math.min(10,fovPunch+6);if(effectsOn())trauma=Math.min(1,trauma+({hurt:.55,bossHit:.4,fall:.3,won:.35}[event.type]||0));if(event.type==='bark'){party?.bark();barkTime=.4;attackRing.position.set(game.player.x,game.player.y+.15,game.player.z);}if(event.type==='dead')showModal('Try again?',`<p>You keep your bones, keys, and rescued friends. Restart from the last flag.</p>`,'Return to checkpoint',()=>{game.retry();canvas.focus();});if(event.type==='secret'){game.pause();updateCampaignUI();const found=STORIES.find(s=>s.egg===event.id);showModal('Secret found!',`<p>${event.text}</p>${found?`<p class="story-hint">A new story opened in the story book: <b>${found.title}</b>.</p>`:''}<p>${game.secrets.size} / 10 in your album.</p>`,'Keep exploring',()=>{game.resume();canvas.focus();},false);if(found)speakStory(found);else voice.speak(null,event.text);}if(event.type==='rushWon'){confetti(game.player.x,game.player.y+1.6,game.player.z,50);setTimeout(()=>showRushResult(event),reduceMotion?200:900);}if(event.type==='rescue')confetti(game.player.x,game.player.y+1.5,game.player.z,24);if(event.type==='won'){victoryT=1.8;confetti(game.player.x,game.player.y+2,game.player.z,70);setTimeout(showVictory,reduceMotion?300:1700);}}
  const p=game.player;if(game.status==='playing'&&p.grounded&&!wasGrounded&&lastVy<-4){const s=Math.min(1,-lastVy/16);squashAmt=-.26*s;squashT=.22;dust(p.x,game.groundBelow(p),p.z,s);tone('land',.4+s*.6);if(s>.5)rumble('land',s);}wasGrounded=p.grounded;lastVy=p.vy;
  if(squashT>0){squashT=Math.max(0,squashT-dt);const k=1-squashT/(squashAmt>0?.2:.22),y=1+squashAmt*(1-easeOutBack(k));dog.scale.set(1/Math.sqrt(y),y,1/Math.sqrt(y));}else dog.scale.setScalar(1);
  dog.position.set(p.x,p.y,p.z);dog.rotation.y=p.facing;if(victoryT>0){victoryT=Math.max(0,victoryT-dt);const t=1.8-victoryT;dog.rotation.y+=reduceMotion?0:t*7;dog.position.y+=Math.abs(Math.sin(t*9))*.55;}const moving=game.status==='playing'&&(Math.hypot(p.vx,p.vz)>.2||game.secrets.has('egg-3-1'));dog.userData.legs.forEach((l,i)=>l.rotation.x=moving?Math.sin(anim*15+i*Math.PI)*.5:0);dog.userData.tail.rotation.z=Math.sin(anim*(moving?19:8))*(moving?.35:.5);dog.userData.cape.rotation.x=p.gliding?-1.3+Math.sin(anim*22)*.06:-.25+(moving?Math.sin(anim*16)*.14-.25:Math.sin(anim*3)*.06);if(p.gliding){dog.userData.legs[2].rotation.z=-1.15;dog.userData.legs[3].rotation.z=1.15;dog.rotation.x=.22;}else{dog.userData.legs[2].rotation.z=.16;dog.userData.legs[3].rotation.z=-.16;dog.rotation.x=0;}dog.visible=true;dog.userData.cape.material=game.status==='playing'&&p.invuln>0&&Math.floor(anim*8)%2===0?mat(0xffd98b):drawing?.cape&&drawingMats?drawingMats.cape:mat(capeColor);dogShadow.position.set(p.x,game.groundBelow(p)+.035,p.z);dogShadow.scale.setScalar(p.grounded?1:.7);
@@ -486,6 +523,7 @@ function frame(now){requestAnimationFrame(frame);const dt=Math.min((now-last)/10
  trophy.rotation.y=anim*.8;trophy.position.y=1.55+Math.sin(anim*2)*.08;
  for(const n of guides){const m=n.mesh,d=Math.hypot(p.x-n.data.x,p.z-n.data.z);m.position.y=n.data.y+Math.abs(Math.sin(anim*2.4+n.data.x))*.08;m.rotation.y=d<10?Math.atan2(p.x-n.data.x,p.z-n.data.z):Math.sin(anim*.4)*.6;m.userData.marker.visible=!game.talked?.[n.data.id];m.userData.marker.position.y=(n.data.kind==='penguin'?2.05:1.85)+Math.sin(anim*3)*.08;}
  if(!$('speech').hidden&&now>speechUntil)$('speech').hidden=true;
+ if(!$('caption').hidden&&now>captionUntil)$('caption').hidden=true;
  for(const e of secretModels){e.mesh.visible=!game.secrets.has(e.data.id);e.mesh.position.y=e.data.y+1+Math.sin(anim*2)*.18;e.mesh.rotation.y=anim*.5;}
  gateBars.visible=game.rescued.size<3;for(const f of flags){const on=f.id===game.checkpoint;f.mesh.material=drawing?.flags&&drawingMats?drawingMats[on?'flagOn':'flag']:mat(on?0x85c37a:0xf5c563);f.mesh.rotation.y=Math.sin(anim*3)*.15;}
  for(const e of game.enemies){const m=enemyModels.get(e.id);m.visible=!game.defeated.has(e.id);m.position.set(e.x,0,e.z);m.rotation.y=Math.atan2(p.x-e.x,p.z-e.z);m.userData.segments.forEach((s,i)=>s.position.x=Math.sin(anim*5+i)*.14);m.scale.setScalar(e.hit>0?1.2:1);}

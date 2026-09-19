@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import {parseSettings,DEFAULTS,FOLLOW,ZOOM,followYaw,behindYaw,wrapAngle} from '../settings3d.js';
 test('settings fall back to sensible values and reject nonsense',()=>{
  assert.deepEqual(parseSettings(null),DEFAULTS);assert.deepEqual(parseSettings('{broken'),DEFAULTS);
- assert.deepEqual(parseSettings({follow:'auto',look:1.6,invertY:true,zoom:'far',effects:false,music:0,sfx:.5,hints:false,shareDrawing:true}),
-  {follow:'auto',look:1.6,invertY:true,zoom:'far',effects:false,music:0,sfx:.5,hints:false,shareDrawing:true});
+ assert.deepEqual(parseSettings({follow:'auto',look:1.6,invertY:true,zoom:'far',effects:false,music:0,sfx:.5,hints:false,shareDrawing:true,subtitles:'always'}),
+  {follow:'auto',look:1.6,invertY:true,zoom:'far',effects:false,music:0,sfx:.5,hints:false,shareDrawing:true,subtitles:'always'});
+ assert.equal(parseSettings({}).subtitles,'auto','subtitles follow speech unless turned off');
+ assert.equal(parseSettings({subtitles:'shout'}).subtitles,'auto');
  assert.equal(parseSettings({}).shareDrawing,false,'a drawing is private until the player says otherwise');
  assert.equal(parseSettings({shareDrawing:'yes'}).shareDrawing,false);
  const wild=parseSettings({follow:'rocket',look:99,zoom:'moon',music:-5,sfx:'loud',invertY:'yes'});

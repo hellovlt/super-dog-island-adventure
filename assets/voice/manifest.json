@@ -1,0 +1,458 @@
+{
+ "voice": "Jessica",
+ "voiceId": "cgSgspJ2msm6clMCkdW9",
+ "model": "eleven_multilingual_v2",
+ "recorded": "2026-09-19",
+ "lines": {
+  "story-world-0": {
+   "file": "story-world-0.mp3",
+   "hash": "7227ea63701cff0d",
+   "text": "It began with a sheet of paper and a box of crayons. A child drew an island, three friends, and a small brown dog. Then they drew a cape on the dog, because every hero needs one. The dog shook the paper dust off his ears, barked once, and the island woke up.",
+   "about": "story: The First Page"
+  },
+  "story-secret-0-0": {
+   "file": "story-secret-0-0.mp3",
+   "hash": "19aa57a1b9c3c6b1",
+   "text": "Behind the trees on the southern shore, Super Dog found a drawing pinned to a post. It was the very first picture the child ever made of him: a wobbly dog with enormous ears. He liked it more than any photograph. Thank you to the young creator of Super Dog.",
+   "about": "story: The First Drawing"
+  },
+  "story-secret-0-1": {
+   "file": "story-secret-0-1.mp3",
+   "hash": "0e79b1d4506afca5",
+   "text": "On clear nights, a small moon rises over Sunny Island. Super Dog is certain it is made of bone, and one day he will jump high enough to sniff it. Until then, he practises his double jump every evening. The moon left him a star antenna, so he can hear it humming.",
+   "about": "story: Dog Moon"
+  },
+  "story-win-0": {
+   "file": "story-win-0.mp3",
+   "hash": "568a35aa27440102",
+   "text": "The Snake King was not wicked. He was only very, very long, and nobody wanted to share a bench with him. So he locked up the friends to keep them close. After a loud bark and a longer talk, he let them go and asked to be invited next time. Now he holds the skipping rope at every island party.",
+   "about": "story: The Snake King Says Sorry"
+  },
+  "story-world-1": {
+   "file": "story-world-1.mp3",
+   "hash": "c34a20ada1fe9291",
+   "text": "Beyond the bridge, mushrooms grow taller than houses. When it rains, the whole kingdom stands underneath them and nobody gets wet. Professor Toad measures each mushroom every morning and writes the number in a small blue book. He says the tallest one is still growing. Super Dog intends to climb it.",
+   "about": "story: The Tall Umbrellas"
+  },
+  "story-secret-1-0": {
+   "file": "story-secret-1-0.mp3",
+   "hash": "9940b879d536073a",
+   "text": "Under the widest cap, eleven mushrooms were having tea. They poured a cup for Super Dog and told him the rules. Rule one: you may dunk your biscuit. Rule two: never eat the cup. Super Dog broke rule two. The cup forgave him.",
+   "about": "story: Mushroom Tea Party"
+  },
+  "story-secret-1-1": {
+   "file": "story-secret-1-1.mp3",
+   "hash": "0e0f502d845dd501",
+   "text": "The smallest mushroom in the kingdom wears the biggest slippers. He is king because he asked politely and nobody else wanted the job. His throne is a pebble, and his crown keeps sliding over his eyes. When he laughs, all the mushrooms wobble.",
+   "about": "story: The Tiny King"
+  },
+  "story-win-1": {
+   "file": "story-win-1.mp3",
+   "hash": "bcf98725b9332cab",
+   "text": "The Mushroom Giant had never seen his own feet. He stomped because he could not see where he was going, and the cages were simply in the way. Super Dog barked directions until the giant sat down. Now the giant carries the friends on his cap, and he always knows exactly where his feet are.",
+   "about": "story: The Giant Who Could Not Bend"
+  },
+  "story-world-2": {
+   "file": "story-world-2.mp3",
+   "hash": "85b0da0641eb0aa5",
+   "text": "Crystal Winter is the quietest world of all. Snow lands on the ice paths without making a sound, and even barks come back softer. Captain Penguin keeps a lantern lit so nobody gets lost in the white. He says the cold is only a bit rude. Underneath, it is friendly.",
+   "about": "story: The Quiet Snow"
+  },
+  "story-secret-2-0": {
+   "file": "story-secret-2-0.mp3",
+   "hash": "24d9f0f4e9655ad5",
+   "text": "Someone had built a dog out of snow, with stones for eyes and a stick for a tail. It had waited all winter for a scarf. Super Dog gave away his spare cape without thinking twice. The snow dog has been smiling ever since, which is difficult when you are made of snow.",
+   "about": "story: Snow Dog"
+  },
+  "story-secret-2-1": {
+   "file": "story-secret-2-1.mp3",
+   "hash": "eff168f171e5dfb4",
+   "text": "A long time ago, a bark escaped on the coldest night of the year, and froze solid in the air. It hung there for a hundred winters, waiting. Super Dog breathed on it until it thawed. Out came a tiny melody instead of a bark, and it followed him home.",
+   "about": "story: The Frozen Woof"
+  },
+  "story-win-2": {
+   "file": "story-win-2.mp3",
+   "hash": "e47f1e1edb4b4bbb",
+   "text": "Frost Fang charged at everything because nothing ever charged back. Underneath the ice, she was mostly lonely. When Super Dog stood his ground and then offered his paw, she stopped running. Now she gives the friends rides down the ice paths, and everyone screams happily.",
+   "about": "story: Frost Fang Gets Warm"
+  },
+  "story-world-3": {
+   "file": "story-world-3.mp3",
+   "hash": "10e4e6f9c094b773",
+   "text": "Volcano Island grumbles in its sleep. Sal the Salamander says the mountain is not angry, only warm, and warmth has to go somewhere. The cracks glow orange, so everybody learns to jump early here. On a good day, the mountain puffs a smoke ring, and the whole island claps.",
+   "about": "story: The Grumpy Mountain"
+  },
+  "story-secret-3-0": {
+   "file": "story-secret-3-0.mp3",
+   "hash": "5877c1a5df5f8524",
+   "text": "The Fire Dragon bakes pizza without an oven. The secret is one long breath and a very steady paw. Super Dog was given the first slice and burnt his tongue immediately. It was, he insists, worth it.",
+   "about": "story: Dragon Pizza"
+  },
+  "story-secret-3-1": {
+   "file": "story-secret-3-1.mp3",
+   "hash": "fc570017092bfdf1",
+   "text": "Stand still on the black rock and you will feel it: the mountain keeps a beat. Boom, boom, rest. Boom, boom, rest. Super Dog tapped his paw along until his tail joined in. Now he has a dancing walk, and the mountain has a dance partner.",
+   "about": "story: The Dancing Volcano"
+  },
+  "story-win-3": {
+   "file": "story-win-3.mp3",
+   "hash": "821ebba31ed8f692",
+   "text": "The Fire Dragon was grumpy the way anyone is grumpy when they cannot cool down. Every sneeze set something alight, so he kept away from everybody. Super Dog barked up a gust of sea wind, and the dragon sighed with relief. He bakes for the whole island now, and the friends bring the plates.",
+   "about": "story: The Dragon Who Was Too Hot"
+  },
+  "story-world-4": {
+   "file": "story-world-4.mp3",
+   "hash": "23924f478ee40d61",
+   "text": "Sky Castle floats on the final page of the drawing. The clouds here are soft enough to nap on, which is dangerous when there is rescuing to do. Wise Owl watches the stairs and counts everyone who climbs them. She says the best stories are the ones that keep going after the last page.",
+   "about": "story: The Last Page"
+  },
+  "story-secret-4-0": {
+   "file": "story-secret-4-0.mp3",
+   "hash": "7d360a6f13a84dfe",
+   "text": "High above the clouds, Super Dog found a crayon as tall as a tree. It was the one the child used to draw five whole worlds. He looked at it for a long time, then wagged his tail. Imagination is the greatest superpower of all, and it fits in one small hand.",
+   "about": "story: World Creator"
+  },
+  "story-secret-4-1": {
+   "file": "story-secret-4-1.mp3",
+   "hash": "37aa21ec22ef81ec",
+   "text": "At the top of the castle, the friends were waiting with something round and shiny. It was a crown, made from a bent hoop and a lot of glitter. They put it on his head and cheered until the clouds shook. Super Dog, you earned it.",
+   "about": "story: A Crown for Super Dog"
+  },
+  "story-win-4": {
+   "file": "story-win-4.mp3",
+   "hash": "e5de37fdcdacadcb",
+   "text": "The Cloud Emperor had sat above the world for so long that he had forgotten how to land. From up there, everyone looked small enough to move around like toys. Super Dog barked until the emperor drifted down and met the friends face to face. He has stayed for tea every afternoon since.",
+   "about": "story: The Cloud Emperor Comes Down"
+  },
+  "guide-0-0": {
+   "file": "guide-0-0.mp3",
+   "hash": "f972812349deb4bd",
+   "text": "Welcome to Sunny Island, Super Dog! Three friends are locked in cages.",
+   "about": "Grandma Tortoise"
+  },
+  "guide-0-1": {
+   "file": "guide-0-1.mp3",
+   "hash": "53d58aef4a2fa848",
+   "text": "Golden keys open the cages. Try the rooftops, the mushroom forest, and the cloud steps.",
+   "about": "Grandma Tortoise"
+  },
+  "guide-0-2": {
+   "file": "guide-0-2.mp3",
+   "hash": "8837380849e3830e",
+   "text": "Touch a golden flag to save your spot and refill your hearts.",
+   "about": "Grandma Tortoise"
+  },
+  "guide-0-3": {
+   "file": "guide-0-3.mp3",
+   "hash": "069d49a119ae8266",
+   "text": "Snakes are shy. Bark with X and they run away!",
+   "about": "Grandma Tortoise"
+  },
+  "guide-0-4": {
+   "file": "guide-0-4.mp3",
+   "hash": "cd44e0075c49478a",
+   "text": "See the glowing stone across the path? Press E on it for a Bone Rush race!",
+   "about": "Grandma Tortoise"
+  },
+  "friend-0-0": {
+   "file": "friend-0-0.mp3",
+   "hash": "58a07ab92231b28f",
+   "text": "Woof! Thank you, Super Dog! That snake took my ball.",
+   "about": "Peach says thanks"
+  },
+  "friend-0-1": {
+   "file": "friend-0-1.mp3",
+   "hash": "e2bd34a20e80bad1",
+   "text": "I knew you would come! Your cape is the best.",
+   "about": "Spark says thanks"
+  },
+  "friend-0-2": {
+   "file": "friend-0-2.mp3",
+   "hash": "c7e7dd72809e86d3",
+   "text": "Free at last! Now let us stop the Snake King together!",
+   "about": "Fluff says thanks"
+  },
+  "guide-1-0": {
+   "file": "guide-1-0.mp3",
+   "hash": "80424cff07b7f2c0",
+   "text": "Welcome to the Mushroom Kingdom! My friends are stuck on the tallest mushrooms.",
+   "about": "Professor Toad"
+  },
+  "guide-1-1": {
+   "file": "guide-1-1.mp3",
+   "hash": "75cb5729bb9cc8ee",
+   "text": "Each mushroom path climbs higher. Jump twice to reach the next cap.",
+   "about": "Professor Toad"
+  },
+  "guide-1-2": {
+   "file": "guide-1-2.mp3",
+   "hash": "8431bdded16e2975",
+   "text": "Your new cape glide helps too. Hold jump while you fall.",
+   "about": "Professor Toad"
+  },
+  "guide-1-3": {
+   "file": "guide-1-3.mp3",
+   "hash": "452b5019cd4373f7",
+   "text": "The Mushroom Giant waits past the gate. Bark while it rests!",
+   "about": "Professor Toad"
+  },
+  "guide-1-4": {
+   "file": "guide-1-4.mp3",
+   "hash": "cd44e0075c49478a",
+   "text": "See the glowing stone across the path? Press E on it for a Bone Rush race!",
+   "about": "Professor Toad"
+  },
+  "friend-1-0": {
+   "file": "friend-1-0.mp3",
+   "hash": "1adb43ee334b3d94",
+   "text": "The mushrooms kept me company, but you are much nicer!",
+   "about": "Moss says thanks"
+  },
+  "friend-1-1": {
+   "file": "friend-1-1.mp3",
+   "hash": "22831bd53a0c753a",
+   "text": "Sniff sniff... you smell like a hero!",
+   "about": "Truffle says thanks"
+  },
+  "friend-1-2": {
+   "file": "friend-1-2.mp3",
+   "hash": "d7d32b5480f2dd78",
+   "text": "My tail is wagging so fast! Thank you!",
+   "about": "Button says thanks"
+  },
+  "guide-2-0": {
+   "file": "guide-2-0.mp3",
+   "hash": "4d4f8264f0fc4b0a",
+   "text": "Brr, hello! Welcome to Crystal Winter.",
+   "about": "Captain Penguin"
+  },
+  "guide-2-1": {
+   "file": "guide-2-1.mp3",
+   "hash": "4d7d85c120d98a24",
+   "text": "Three frozen friends wait at the top of the ice paths.",
+   "about": "Captain Penguin"
+  },
+  "guide-2-2": {
+   "file": "guide-2-2.mp3",
+   "hash": "94464fcc965e8b4f",
+   "text": "If you slip off, a rescue bubble brings you back to your last flag.",
+   "about": "Captain Penguin"
+  },
+  "guide-2-3": {
+   "file": "guide-2-3.mp3",
+   "hash": "39c7e70347b46cfa",
+   "text": "Frost Fang charges fast. Jump over its icy rings!",
+   "about": "Captain Penguin"
+  },
+  "guide-2-4": {
+   "file": "guide-2-4.mp3",
+   "hash": "cd44e0075c49478a",
+   "text": "See the glowing stone across the path? Press E on it for a Bone Rush race!",
+   "about": "Captain Penguin"
+  },
+  "friend-2-0": {
+   "file": "friend-2-0.mp3",
+   "hash": "162445b613a36367",
+   "text": "Brrr! A hug from a super dog is the warmest thing.",
+   "about": "Snowball says thanks"
+  },
+  "friend-2-1": {
+   "file": "friend-2-1.mp3",
+   "hash": "dc86fd462d6c167e",
+   "text": "I counted snowflakes while I waited. Four hundred and twelve!",
+   "about": "Polar says thanks"
+  },
+  "friend-2-2": {
+   "file": "friend-2-2.mp3",
+   "hash": "d7a9514a102995a7",
+   "text": "You found me! Watch out for Frost Fang and its icy rings.",
+   "about": "Icicle says thanks"
+  },
+  "guide-3-0": {
+   "file": "guide-3-0.mp3",
+   "hash": "8302bed3923d8baa",
+   "text": "Hot, hot, hot! Welcome to Volcano Island.",
+   "about": "Sal the Salamander"
+  },
+  "guide-3-1": {
+   "file": "guide-3-1.mp3",
+   "hash": "4818766b08e32001",
+   "text": "The glowing cracks are lava. Jump over them, or glide across!",
+   "about": "Sal the Salamander"
+  },
+  "guide-3-2": {
+   "file": "guide-3-2.mp3",
+   "hash": "a019b89d83c66bb0",
+   "text": "Your friends are on the high rocks. Keys first, then cages.",
+   "about": "Sal the Salamander"
+  },
+  "guide-3-3": {
+   "file": "guide-3-3.mp3",
+   "hash": "1e14ae95e9abdb43",
+   "text": "The Fire Dragon rests after each charge. That is your moment to bark!",
+   "about": "Sal the Salamander"
+  },
+  "guide-3-4": {
+   "file": "guide-3-4.mp3",
+   "hash": "cd44e0075c49478a",
+   "text": "See the glowing stone across the path? Press E on it for a Bone Rush race!",
+   "about": "Sal the Salamander"
+  },
+  "friend-3-0": {
+   "file": "friend-3-0.mp3",
+   "hash": "79dcc2ce32494353",
+   "text": "Phew! It was getting toasty in there.",
+   "about": "Ember says thanks"
+  },
+  "friend-3-1": {
+   "file": "friend-3-1.mp3",
+   "hash": "a4b808498dca6485",
+   "text": "You jumped over the lava like a champion!",
+   "about": "Chili says thanks"
+  },
+  "friend-3-2": {
+   "file": "friend-3-2.mp3",
+   "hash": "a46de6a98250a984",
+   "text": "Thank you! The Fire Dragon is only grumpy. Bark and it calms down.",
+   "about": "Ash says thanks"
+  },
+  "guide-4-0": {
+   "file": "guide-4-0.mp3",
+   "hash": "e9467d220e155dd4",
+   "text": "Hoo! You reached Sky Castle, the last page of the adventure.",
+   "about": "Wise Owl"
+  },
+  "guide-4-1": {
+   "file": "guide-4-1.mp3",
+   "hash": "2d3e56d2f0354a16",
+   "text": "The paths float on clouds. Look before you leap, and glide when you fall.",
+   "about": "Wise Owl"
+  },
+  "guide-4-2": {
+   "file": "guide-4-2.mp3",
+   "hash": "3d010d5644fd25a6",
+   "text": "Three friends wait on the highest platforms.",
+   "about": "Wise Owl"
+  },
+  "guide-4-3": {
+   "file": "guide-4-3.mp3",
+   "hash": "8b6df14823e7fd66",
+   "text": "The Cloud Emperor is the final giant. I believe in you, Super Dog!",
+   "about": "Wise Owl"
+  },
+  "guide-4-4": {
+   "file": "guide-4-4.mp3",
+   "hash": "cd44e0075c49478a",
+   "text": "See the glowing stone across the path? Press E on it for a Bone Rush race!",
+   "about": "Wise Owl"
+  },
+  "friend-4-0": {
+   "file": "friend-4-0.mp3",
+   "hash": "dae5daa42c257215",
+   "text": "Up here the clouds are soft, but the cage was not!",
+   "about": "Comet says thanks"
+  },
+  "friend-4-1": {
+   "file": "friend-4-1.mp3",
+   "hash": "91fa110332f1d2fa",
+   "text": "You made it to the sky! You really can fly.",
+   "about": "Sunny says thanks"
+  },
+  "friend-4-2": {
+   "file": "friend-4-2.mp3",
+   "hash": "0a3e122cf41d1a77",
+   "text": "The Cloud Emperor is the last giant. You can do it!",
+   "about": "Mallow says thanks"
+  },
+  "ui-welcome": {
+   "file": "ui-welcome.mp3",
+   "hash": "9328af933b598874",
+   "text": "Welcome to Super Dog Island Adventure! Press the big green button to start exploring.",
+   "about": "in game"
+  },
+  "ui-firstKey": {
+   "file": "ui-firstKey.mp3",
+   "hash": "84ca958b855c7cf9",
+   "text": "A golden key! Find a friend in a cage and press E to set them free.",
+   "about": "in game"
+  },
+  "ui-checkpoint": {
+   "file": "ui-checkpoint.mp3",
+   "hash": "a4d7dc2de2ca4aea",
+   "text": "Checkpoint saved. Your hearts are full again.",
+   "about": "in game"
+  },
+  "ui-hurt": {
+   "file": "ui-hurt.mp3",
+   "hash": "d4818e9aef84307e",
+   "text": "Ouch! Touch a golden flag to fill your hearts.",
+   "about": "in game"
+  },
+  "ui-dead": {
+   "file": "ui-dead.mp3",
+   "hash": "eca14a1e2d16a2ce",
+   "text": "Never mind. Every hero falls sometimes. Back to the flag we go.",
+   "about": "in game"
+  },
+  "ui-gate": {
+   "file": "ui-gate.mp3",
+   "hash": "5fb563c71e04dedb",
+   "text": "A rescue bubble carried you back. Rescue all three friends to open the gate!",
+   "about": "in game"
+  },
+  "ui-bossReady": {
+   "file": "ui-bossReady.mp3",
+   "hash": "840433ad116bbffa",
+   "text": "All three friends are free. Cross the bridge and meet the giant.",
+   "about": "in game"
+  },
+  "ui-bossTired": {
+   "file": "ui-bossTired.mp3",
+   "hash": "974d766b5d12023c",
+   "text": "The giant is tired! Move closer and bark with X.",
+   "about": "in game"
+  },
+  "ui-glideUnlocked": {
+   "file": "ui-glideUnlocked.mp3",
+   "hash": "68327ea290d17c9c",
+   "text": "New power! Hold jump while you are falling to glide on your cape.",
+   "about": "in game"
+  },
+  "ui-rushStart": {
+   "file": "ui-rushStart.mp3",
+   "hash": "664c50e74d27d127",
+   "text": "Bone Rush! Collect all twelve golden bones before the clock runs out.",
+   "about": "in game"
+  },
+  "ui-rushWon": {
+   "file": "ui-rushWon.mp3",
+   "hash": "41371211406ce981",
+   "text": "You did it! Every golden bone is yours.",
+   "about": "in game"
+  },
+  "ui-rushLost": {
+   "file": "ui-rushLost.mp3",
+   "hash": "14ee6607a35d61f7",
+   "text": "Time is up. Try the stone again whenever you like.",
+   "about": "in game"
+  },
+  "ui-wardrobe": {
+   "file": "ui-wardrobe.mp3",
+   "hash": "d804fe41680b8658",
+   "text": "Welcome to the dog house. Your bones can buy capes, hats and colours.",
+   "about": "in game"
+  },
+  "ui-drawing": {
+   "file": "ui-drawing.mp3",
+   "hash": "aea8416ab8b67331",
+   "text": "Draw anything you like, and Super Dog will wear it on his cape.",
+   "about": "in game"
+  },
+  "ui-friends": {
+   "file": "ui-friends.mp3",
+   "hash": "44915563f1696368",
+   "text": "Ask a grown-up to share your code, and your friends can play on this island too.",
+   "about": "in game"
+  }
+ }
+}

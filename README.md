@@ -69,6 +69,22 @@ Bones from every world, plus Bone Rush rewards, buy capes, hats, and fur colors 
 
 Open **✎ Draw on Super Dog's cape** in the main menu, or click the "Imagined by a child" card. Draw with eight crayons, three brush sizes, an eraser, and undo. **Use a photo** turns a picture of a paper drawing into a sticker: the paper becomes transparent and only the lines and colors stay. The drawing appears on Super Dog's cape and on the checkpoint flags; untick either place to hide it there. It is saved in this browser under `superdog-drawing-v1`, separately from campaign progress.
 
+## Stories, voice, and subtitles
+
+The **📖 Story book** in the main menu holds twenty short stories: one opening each world, one behind every secret,
+and one for each giant that is beaten. Stories open as the adventure is played, and each has a **Read it to me** button.
+
+Every spoken line is a recording made ahead of time with ElevenLabs (voice: Jessica), stored in `assets/voice/` and
+played from a file, so the published game needs no speech service, no key, and no network. If a recording is missing the
+browser's own voice reads the words instead.
+
+**Subtitles** carry the same words on screen for players who cannot hear, and can also describe sounds
+("Woof!", "Checkpoint chime"). Choose **Speech**, **Speech + sounds**, or **Off** in Settings; speech subtitles are on by default.
+
+To re-record after editing any spoken text, put an ElevenLabs key in `ELEVENLABS_API_KEY` or `~/.elevenlabs/key.env`
+and run `node tools/make-voice.mjs`. It only records lines whose words changed; `npm test` fails if a line was re-worded
+without re-recording. The key never enters the project or the published game.
+
 ## Sound
 
 Each world has its own looping tune, generated in the browser with Web Audio (no audio files). Sound is on by default and starts after the first click or key press; the ♫ button mutes it and the choice is remembered. Bones collected quickly in a row play a rising scale.
@@ -95,6 +111,9 @@ Flags set checkpoints and restore health. Progress saves per world in this brows
 - `wardrobe3d.js`: wardrobe catalogue, prices, and purchase rules.
 - `input3d.js`: gamepad mapping and rumble strengths.
 - `multiplayer3d.js`: room codes, friend state packets, and the party roster.
+- `stories3d.js`: the twenty stories and when each one opens.
+- `voice3d.js`: recorded-line playback, subtitles, and sound captions.
+- `tools/make-voice.mjs`, `tools/voice-lines.mjs`: the recording script and the list of spoken lines.
 - `settings3d.js`: saved settings and the camera-follow maths.
 - `audio3d.js`: per-world music and sound effects synthesized with Web Audio.
 - `game3d.js`: Three.js rendering, models, camera, sound, UI, and controls.

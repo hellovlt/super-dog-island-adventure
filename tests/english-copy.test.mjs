@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {Adventure3D} from '../adventure3d.js';
 
 test('all player-facing source and guides use English without broken encoding',()=>{
- for(const file of ['index.html','classic/index.html','game3d.js','drawing3d.js','audio3d.js','wardrobe3d.js','input3d.js','settings3d.js','game.js','adventure3d.js','campaign3d.js','world3d.js','levels.js','engine.js','README.md','classic/README.md','docs/Super-Dog-3D-Guide.md']){
+ for(const file of ['index.html','classic/index.html','game3d.js','drawing3d.js','audio3d.js','wardrobe3d.js','input3d.js','settings3d.js','stories3d.js','voice3d.js','multiplayer3d.js','game.js','adventure3d.js','campaign3d.js','world3d.js','levels.js','engine.js','README.md','classic/README.md','docs/Super-Dog-3D-Guide.md']){
   const text=readFileSync(new URL('../'+file,import.meta.url),'utf8');
   assert.doesNotMatch(text,/[\u0400-\u04ff]|\uFFFD|\?{3,}/,file);
   if(file.endsWith('.html'))assert.match(text,/<html lang="en">/,file);

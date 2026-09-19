@@ -90,9 +90,9 @@ export class Adventure3D {
   const b=this.boss;if(b.hp>0&&b.state==='rest'&&distance(p,b)<this.bossRadius+6&&Math.abs(p.y-b.y)<5&&clearSight(eye(p),eye(b,1.3),this.solids)){b.hp--;b.hit=.4;this.emit('bossHit',`Good hit! Health remaining: ${b.hp}`);if(b.hp<=0){b.state='defeated';this.waves=[];this.status='won';this.emit('won','You saved the island and all your friends!');}}
  }
  nearbyGuide(){return this.world.NPCS.find(n=>distance(this.player,n)<2.8&&Math.abs(this.player.y-n.y)<1.5);}
- talk(n){this.talked??={};const i=this.talked[n.id]??0;this.talked[n.id]=i+1;this.emit('talk',n.lines[i%n.lines.length],{speaker:n.name});}
+ talk(n){this.talked??={};const i=this.talked[n.id]??0;this.talked[n.id]=i+1;const index=i%n.lines.length;this.emit('talk',n.lines[index],{speaker:n.name,index});}
  nearbyFriend(){return this.world.FRIENDS.find(f=>!this.rescued.has(f.id)&&distance(this.player,f)<3&&Math.abs(this.player.y-f.y)<1.5&&clearSight(eye(this.player),eye(f),this.solids,`cage-${f.id}`));}
- interact(){if(this.status!=='playing')return;if(this.discoverSecret())return;const f=this.nearbyFriend();if(!f){if(this.nearbyRushStone()){this.startRush();return;}const n=this.nearbyGuide();if(n)this.talk(n);return;}if(this.keyCount>0){this.rescued.add(f.id);this.solids=this.world.solidsFor(this.rescued);this.player.hp=this.maxHP;this.emit('rescue',`${f.name} is free! ${this.rescued.size}/3 friends rescued.`,{speaker:f.name,line:f.line});}else this.emit('hint','Find a golden key first!');}
+ interact(){if(this.status!=='playing')return;if(this.discoverSecret())return;const f=this.nearbyFriend();if(!f){if(this.nearbyRushStone()){this.startRush();return;}const n=this.nearbyGuide();if(n)this.talk(n);return;}if(this.keyCount>0){this.rescued.add(f.id);this.solids=this.world.solidsFor(this.rescued);this.player.hp=this.maxHP;this.emit('rescue',`${f.name} is free! ${this.rescued.size}/3 friends rescued.`,{speaker:f.name,line:f.line,index:this.world.FRIENDS.indexOf(f)});}else this.emit('hint','Find a golden key first!');}
  tick(dt,input={}){
   if(this.status!=='playing'||!Number.isFinite(dt)||dt<=0)return;
   // Run physics in small steps even when rendering at 10–20 frames per second.

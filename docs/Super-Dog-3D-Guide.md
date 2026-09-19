@@ -45,6 +45,14 @@ Across the path from the guide is a glowing stone. Press E on it to start **Bone
 
 Bones buy new capes, hats, and fur colors in the **Wardrobe** on the main menu. Super Dog spins around so you can see each choice.
 
+## Stories and subtitles
+
+Open the **Story book** in the main menu. It fills up as you play: every world, every secret and every giant adds a
+story. Press **Read it to me** and a friendly voice reads it aloud, with the words shown on screen at the same time.
+
+If you cannot hear, turn on subtitles in **Settings**. Choose **Speech** to see what is said, or **Speech + sounds** to
+also see short notes such as "Woof!" or "Checkpoint chime".
+
 ## Music and sound
 
 Every world has its own song. Sound starts after your first click or tap. Press the ♫ button to turn sound off or on; the game remembers your choice.

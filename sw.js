@@ -1,11 +1,11 @@
 // Offline service worker: the whole game is cached on install, so it plays with no server and no network.
-const VERSION='superdog-v6-3';
+const VERSION='superdog-v7-0';
 const ASSETS=[
  './','./index.html','./style3d.css','./favicon.svg','./manifest.webmanifest',
  './icon-192.png','./icon-512.png','./icon-maskable.png',
  './game3d.js','./adventure3d.js','./campaign3d.js','./collision3d.js','./world3d.js',
  './drawing3d.js','./audio3d.js','./wardrobe3d.js','./input3d.js','./settings3d.js',
- './multiplayer3d.js',
+ './multiplayer3d.js','./stories3d.js','./voice3d.js',
  './vendor/trystero/core/action-wire.mjs',
  './vendor/trystero/core/actions.mjs',
  './vendor/trystero/core/crypto.mjs',
@@ -28,8 +28,12 @@ const ASSETS=[
 ];
 // Prime the cache straight from the network: a host that asks browsers to hold files for minutes
 // (GitHub Pages does) must not hand the worker a stale copy of a fresh release.
+// Spoken lines are listed in their own manifest, so recordings never drift out of the cache list.
+const voiceFiles=async()=>{try{const r=await fetch(new Request('./assets/voice/manifest.json',{cache:'reload'}));if(!r.ok)return [];
+ const data=await r.json();return ['./assets/voice/manifest.json',...Object.values(data.lines||{}).map(l=>'./assets/voice/'+l.file)];}catch{return [];}};
 self.addEventListener('install',event=>{event.waitUntil(caches.open(VERSION)
- .then(cache=>Promise.all(ASSETS.map(path=>fetch(new Request(path,{cache:'reload'})).then(response=>response.ok?cache.put(path,response):null).catch(()=>null))))
+ .then(async cache=>{const all=[...ASSETS,...await voiceFiles()];
+  return Promise.all(all.map(path=>fetch(new Request(path,{cache:'reload'})).then(response=>response.ok?cache.put(path,response):null).catch(()=>null)));})
  .then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==VERSION).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 // The game's own files are served from the cache; anything else (test pages, new assets) asks the
