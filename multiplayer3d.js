@@ -53,6 +53,16 @@ export function easeRemote(shown,target,dt,speed=12){
   facing:shown.facing+shortestTurn(shown.facing,target.facing)*k};
 }
 export const roomFull=peers=>peers.length+1>=MAX_PLAYERS;
+// A child who mistypes a code lands in an empty room that looks exactly like hosting one.
+// These are the words shown under the code while nobody else is there yet.
+export const LONELY_AFTER=18000;
+export function waitingMessage({joined=false,friends=0,waitedMs=0}={}){
+ if(friends>0)return null;
+ if(!joined)return 'Read this code to your friends. They type it into Join.';
+ return waitedMs<LONELY_AFTER
+  ?'Looking for your friend’s island… keep this open.'
+  :'Nobody is on this island yet. Check the code with your friend, letter by letter, then join again.';
+}
 
 // Joins the room and keeps the roster; everything above stays testable without a network.
 export function joinParty(code,{look,onRoster,onBark,onJoin,onLeave,onError}={}){

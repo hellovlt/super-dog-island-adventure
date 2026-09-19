@@ -7,7 +7,7 @@ import {SLOTS,SLOT_NAMES,WARDROBE,wornItem,owns} from './wardrobe3d.js';
 import {readPad,RUMBLE} from './input3d.js';
 import {SETTINGS_STORAGE,parseSettings,FOLLOW,ZOOM,followYaw} from './settings3d.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
-import {joinParty,makeRoomCode,normalizeCode,isCompleteCode,formatCode,pickName,easeRemote,NAMES,MAX_PLAYERS,CODE_LENGTH} from './multiplayer3d.js';
+import {joinParty,makeRoomCode,normalizeCode,isCompleteCode,formatCode,pickName,easeRemote,waitingMessage,LONELY_AFTER,NAMES,MAX_PLAYERS,CODE_LENGTH} from './multiplayer3d.js';
 import {STORIES,storyText,isStoryOpen,storiesForLevel,STORY_COUNT} from './stories3d.js';
 import {createVoice,parseManifest,captionForSound,lineId,VOICE_DIR} from './voice3d.js';
 const $=id=>document.getElementById(id),canvas=$('world');
@@ -311,7 +311,7 @@ function renderWardrobe(){$('modalBody').innerHTML=wardrobeMarkup();for(const t 
 function openWardrobe(){showModal('Dog house wardrobe','','Done',()=>{},false);voice.speak(lineId.ui('wardrobe'));$('modal').classList.add('wardrobe');previewMode=true;$('menu').style.visibility='hidden';renderWardrobe();}
 $('wardrobe').onclick=openWardrobe;
 // Play with friends: a five-letter code, up to eight dogs on one island.
-let party=null,partySendAt=0;const greeted=new Set();
+let party=null,partySendAt=0,partyJoined=false,partyOpenedAt=0,lonelyTimer=0;const greeted=new Set();
 const NAME_STORAGE='superdog-name';
 let myName=(()=>{try{return localStorage.getItem(NAME_STORAGE)||pickName();}catch{return pickName();}})();
 const myLook=()=>({name:myName,cape:wornItem(game.wardrobe,'cape',game.secrets).color,hat:wornItem(game.wardrobe,'hat',game.secrets).id,
@@ -321,9 +321,12 @@ function updatePartyHud(){
  $('partyHud').hidden=!party;$('partyCount').textContent=count?`${count} friend${count>1?'s':''} · ${party.code}`:`Waiting · ${party?.code??''}`;
  if(!$('modal').hidden&&$('modal').classList.contains('party'))renderParty();
 }
-function startParty(code){
+function startParty(code,{joined=false}={}){
  if(party)party.leave();
- const joinedAt=Date.now();
+ const joinedAt=Date.now();partyJoined=joined;partyOpenedAt=joinedAt;
+ // Somebody who typed a code and is still alone after a while has probably typed it wrong.
+ clearTimeout(lonelyTimer);
+ if(joined)lonelyTimer=setTimeout(()=>{if(party&&!party.roster().length){toast('Nobody is on that island. Check the code with your friend.');tone('hurt');renderParty();}},LONELY_AFTER);
  try{
   party=joinParty(code,{look:myLook,
    onRoster:roster=>{
@@ -342,7 +345,7 @@ function startParty(code){
  try{localStorage.setItem(NAME_STORAGE,myName);}catch{}
  updatePartyHud();renderParty();
 }
-function leaveParty(){if(!party)return;party.leave();party=null;greeted.clear();for(const id of [...friendViews.keys()])dropFriend(id);updatePartyHud();renderParty();}
+function leaveParty(){if(!party)return;clearTimeout(lonelyTimer);party.leave();party=null;partyJoined=false;greeted.clear();for(const id of [...friendViews.keys()])dropFriend(id);updatePartyHud();renderParty();}
 function partyMarkup(){
  if(!party)return `<p>Play on the same island with up to ${MAX_PLAYERS} friends. One of you starts a game and reads out the code; the others type it in.</p>
  <div class="party-name"><span class="set-label">You are</span><select id="partyName">${NAMES.map(n=>`<option${n===myName?' selected':''}>${n}</option>`).join('')}</select></div>
@@ -350,7 +353,8 @@ function partyMarkup(){
  <p class="party-or">or join a friend</p>
  <div class="party-join"><input id="partyCode" inputmode="latin" autocomplete="off" spellcheck="false" maxlength="7" placeholder="CODE" aria-label="Friend's code"><button type="button" class="primary" data-party="join">Join</button></div>`;
  const roster=party.roster();
- return `<p>Read this code to your friends. They type it into <b>Join</b>.</p><div class="party-code">${formatCode(party.code)}</div>
+ const waiting=waitingMessage({joined:partyJoined,friends:roster.length,waitedMs:Date.now()-partyOpenedAt});
+ return `<p class="party-wait">${(waiting??'Read this code to your friends. They type it into Join.').replace('Join.','<b>Join</b>.')}</p><div class="party-code">${formatCode(party.code)}</div>
  <h3 class="shelf">On the island (${roster.length+1}/${MAX_PLAYERS})</h3>
  <ul class="party-list"><li><b>${myName}</b> <small>you · ${theme.name}</small></li>${roster.map(f=>`<li><b>${f.look.name}</b> <small>${f.state?LEVELS[f.state.level].name:'arriving…'}</small></li>`).join('')}</ul>
  ${roster.length?'':'<p class="set-note">Nobody has joined yet. The code works as long as this screen stays open.</p>'}
@@ -368,7 +372,7 @@ function renderParty(){
   const what=button.dataset.party;
   if(what==='start')startParty(makeRoomCode());
   else if(what==='join'){const typed=normalizeCode($('modalBody').querySelector('#partyCode').value);
-   if(!isCompleteCode(typed)){toast(`A code has ${CODE_LENGTH} letters and numbers.`);return;}startParty(typed);}
+   if(!isCompleteCode(typed)){toast(`A code has ${CODE_LENGTH} letters and numbers.`);return;}startParty(typed,{joined:true});}
   else if(what==='leave')leaveParty();
   else if(what==='drawing'){settings.shareDrawing=!settings.shareDrawing;saveSettings();party?.sendLook();renderParty();}
  };

@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {makeRoomCode,normalizeCode,isCompleteCode,formatCode,pickName,NAMES,CODE_ALPHABET,CODE_LENGTH,MAX_PLAYERS,
- packState,unpackState,packLook,unpackLook,easeRemote,shortestTurn,roomFull} from '../multiplayer3d.js';
+ packState,unpackState,packLook,unpackLook,easeRemote,shortestTurn,roomFull,waitingMessage,LONELY_AFTER} from '../multiplayer3d.js';
 
 test('codes are easy to read aloud, type, and mistype',()=>{
  for(const confusing of ['O','0','I','1','L'])assert.ok(!CODE_ALPHABET.includes(confusing),`${confusing} is not in a child's code`);
@@ -45,4 +46,15 @@ test('friends glide smoothly between updates and turn the short way',()=>{
  assert.ok(Math.abs(shown.x-10)<.1&&Math.abs(shown.facing-Math.PI/2)<.05,'catches up within a second');
  const oneStep=easeRemote({x:0,y:0,z:0,facing:0},target,1/60);
  assert.ok(oneStep.x>0&&oneStep.x<2,'and never teleports');
+});
+test('a child who mistypes a code is told, instead of waiting alone forever',()=>{
+ assert.match(waitingMessage({joined:false,friends:0,waitedMs:0}),/Read this code/,'the one who started reads it out');
+ assert.match(waitingMessage({joined:true,friends:0,waitedMs:0}),/Looking for/,'the one who typed it is still hopeful');
+ const late=waitingMessage({joined:true,friends:0,waitedMs:LONELY_AFTER});
+ assert.match(late,/Check the code/,'and after a while is told to check the code');
+ assert.equal(waitingMessage({joined:true,friends:1,waitedMs:LONELY_AFTER}),null,'nothing is said once a friend is there');
+ assert.ok(LONELY_AFTER>=10000&&LONELY_AFTER<=30000,'long enough for a slow join, short enough for a child');
+ const ui=readFileSync(new URL('../game3d.js',import.meta.url),'utf8');
+ assert.match(ui,/startParty\(typed,\{joined:true\}\)/,'joining is told apart from starting');
+ assert.match(ui,/setTimeout\([^;]*roster\(\)\.length/,'and an empty island speaks up on its own');
 });
