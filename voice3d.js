@@ -1,6 +1,7 @@
 // Spoken lines: recorded ahead of time (see tools/make-voice.mjs) and played from files, so the
 // published game needs no speech service, no key, and no network. Subtitles carry the same words.
-export const VOICE_DIR='./assets/voice/';
+// Resolved against this module, not the page, so recordings load from test pages in sub-folders too.
+export const VOICE_DIR=new URL('./assets/voice/',import.meta.url).href;
 export const lineId={
  story:id=>id,
  guide:(level,index)=>`guide-${level}-${index}`,

@@ -5,7 +5,18 @@ html=html.replace('./style3d.css','../../../style3d.css').replace('./favicon.svg
 html=html.replace(/<script>if\('serviceWorker'[^<]*<\/script>\s*/,'');  // the QA page is not the installable app
 await writeFile(new URL('index.html',out),html);
 let source=await readFile(new URL('../game3d.js',import.meta.url),'utf8');
-source=source.replace('./vendor/three.module.js','../../../vendor/three.module.js').replace('./adventure3d.js','../../../adventure3d.js').replace('./collision3d.js','../../../collision3d.js').replace('./drawing3d.js','../../../drawing3d.js').replace('./audio3d.js','../../../audio3d.js').replace('./wardrobe3d.js','../../../wardrobe3d.js').replace('./input3d.js','../../../input3d.js').replace('./settings3d.js','../../../settings3d.js').replace('./vendor/GLTFLoader.js','../../../vendor/GLTFLoader.js').replace('./assets/bosses/','../../../assets/bosses/').replaceAll('superdog-island-3d-v3','superdog-qa-3d').replaceAll('superdog-island-3d-v4','superdog-qa-3d-v4').replace('const game=new Adventure3D(save);','let game=new Adventure3D(save);').replace('SPAWN,TREES,PROPS,ROCKS','SPAWN,TREES,PROPS,ROCKS,solidsFor');
+// Every path the page loads is relative to the game folder, so rewrite them all at once:
+// a hand-kept list silently 404s the day a new module is added.
+// Rewrite every path the page loads in one pass: a hand-kept list silently 404s the day a new
+// module is added. The QA page also gets its own save keys and the extra bindings it drives.
+source=source.replace(/(from\s*['"])\.\/([^'"]+)(['"])/g,'$1../../../$2$3')
+ .replace(/(['"`])\.\/assets\//g,'$1../../../assets/')
+ .replaceAll('superdog-island-3d-v3','superdog-qa-3d').replaceAll('superdog-island-3d-v4','superdog-qa-3d-v4')
+ .replaceAll('superdog-drawing-v1','superdog-qa-drawing').replaceAll('superdog-settings-v1','superdog-qa-settings')
+ .replaceAll('superdog-sound','superdog-qa-sound').replaceAll('superdog-read-aloud','superdog-qa-read-aloud')
+ .replaceAll('superdog-name','superdog-qa-name')
+ .replace('const game=new Adventure3D(save);','let game=new Adventure3D(save);')
+ .replace('SPAWN,TREES,PROPS,ROCKS','SPAWN,TREES,PROPS,ROCKS,solidsFor');
 source=source.replace('const x=(pressed','let x=(pressed').replace('  // Fixed maximum physics step prevents tunnelling on slower devices.','  const qa=qaInput();if(qa){x=qa.x;z=qa.z;actions={...actions,...qa};}\n  // QA uses the production frame input path.');
 source+='\n'+await readFile(new URL('./playtest-controls.js',import.meta.url),'utf8');
 source=source.replace('function frame(now){requestAnimationFrame(frame);','function frame(now){qaCountFrame(now);requestAnimationFrame(frame);');
