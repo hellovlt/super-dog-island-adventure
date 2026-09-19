@@ -116,6 +116,8 @@ export class Adventure3D {
   moveHorizontal(p,p.vx*dt,p.vz*dt,this.solids);p.vy-=26*dt;if(gliding)p.vy=Math.max(p.vy,-2.4);moveVertical(p,p.vy*dt,this.solids);if(p.grounded)p.gliding=false;
   if(!p.grounded&&p.jumps===0&&p.coyote<=0)p.jumps=1;
   if(this.rescued.size<3&&p.z<-42.5&&p.z>-44&&Math.abs(p.x)<3&&this.time-(this.gateHint||-10)>6){this.gateHint=this.time;this.emit('hint','Rescue all three friends to open the gate.');}
+  // The bridge is the only way south: gliding around the closed gate carries you back to your flag.
+  if(this.rescued.size<3&&p.z<-45.5){this.emit('hint','A rescue bubble carried you back. Rescue all three friends to open the gate!');this.respawn({heal:false});return;}
   if(p.y<-3.5){p.hp=Math.max(0,p.hp-this.rules.fallDamage);if(p.hp===0){this.die();return;}this.respawn({heal:false});this.emit('fall',this.rules.fallDamage?'Back to the flag. Falling cost 1 heart.':'A rescue bubble brought you back to the flag.');return;}
   for(const c of [...this.world.BONES,...this.world.KEYS,...this.world.STARS])if(!this.collected.has(c.id)&&distance(p,c)<1.15&&Math.abs(p.y+.8-c.y)<1.1&&clearSight(eye(p,.8),c,this.solids)){this.collected.add(c.id);this.emit(this.world.KEYS.includes(c)?'key':this.world.STARS.includes(c)?'star':'coin',this.world.KEYS.includes(c)?'A golden key! Find a friend in a cage.':this.world.STARS.includes(c)?'Secret star found!':null);}
   for(const c of this.world.CHECKPOINTS){const near=distance(p,c)<1.8&&Math.abs(p.y-c.y)<.5&&p.grounded;if(near&&!this.flagInside.has(c.id)&&(c.id!=='boss'||this.rescued.size===3)){this.flagInside.add(c.id);this.checkpoint=c.id;p.hp=this.maxHP;this.emit('checkpoint','Checkpoint saved. Hearts refilled!');}else if(!near)this.flagInside.delete(c.id);}
