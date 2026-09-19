@@ -459,12 +459,12 @@ ${choiceRow('Camera help','follow',[['off','Off'],['gentle','Gentle'],['auto','A
 ${choiceRow('Camera distance','zoom',[['near','Near'],['medium','Medium'],['far','Far']],settings.zoom)}
 ${sliderRow('Look speed','look',settings.look,.4,2,.1)}
 ${switchRow('Invert up and down','invertY',settings.invertY)}
+${choiceRow('Subtitles','subtitles',[['auto','Speech'],['always','Speech + sounds'],['off','Off']],settings.subtitles)}
+${switchRow('Read stories and friends aloud','readAloud',readAloud)}
 ${switchRow('Screen shake and zoom kicks','effects',settings.effects)}
 ${sliderRow('Music volume','music',settings.music,0,1,.05)}
 ${sliderRow('Sound volume','sfx',settings.sfx,0,1,.05)}
-${switchRow('Read stories and friends aloud','readAloud',readAloud)}
 ${switchRow('Show control hints','hints',settings.hints)}
-${choiceRow('Subtitles','subtitles',[['auto','Speech'],['always','Speech + sounds'],['off','Off']],settings.subtitles)}
 <p class="set-note">Press <kbd>C</kbd>, tap ◎, or click the right stick to put the camera behind Super Dog.</p>`;}
 function renderSettings(){$('modalBody').innerHTML=settingsMarkup();
  for(const el of $('modalBody').querySelectorAll('[data-set]')){const name=el.dataset.set;
