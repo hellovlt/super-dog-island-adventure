@@ -1,5 +1,5 @@
 // Offline service worker: the whole game is cached on install, so it plays with no server and no network.
-const VERSION='superdog-v5-3';
+const VERSION='superdog-v5-4';
 const ASSETS=[
  './','./index.html','./style3d.css','./favicon.svg','./manifest.webmanifest',
  './icon-192.png','./icon-512.png','./icon-maskable.png',
@@ -9,7 +9,11 @@ const ASSETS=[
  './assets/bosses/snake.glb','./assets/bosses/mushroom.glb','./assets/bosses/wolf.glb','./assets/bosses/dragon.glb','./assets/bosses/cloud.glb',
  './classic/index.html','./game.js','./engine.js','./levels.js','./style.css',
 ];
-self.addEventListener('install',event=>{event.waitUntil(caches.open(VERSION).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));});
+// Prime the cache straight from the network: a host that asks browsers to hold files for minutes
+// (GitHub Pages does) must not hand the worker a stale copy of a fresh release.
+self.addEventListener('install',event=>{event.waitUntil(caches.open(VERSION)
+ .then(cache=>Promise.all(ASSETS.map(path=>fetch(new Request(path,{cache:'reload'})).then(response=>response.ok?cache.put(path,response):null).catch(()=>null))))
+ .then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==VERSION).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 // The game's own files are served from the cache; anything else (test pages, new assets) asks the
 // network first, so an update is never hidden behind a stale copy.
