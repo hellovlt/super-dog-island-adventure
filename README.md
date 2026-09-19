@@ -2,6 +2,12 @@
 
 An English-language third-person adventure inspired by a child's drawings: **5 worlds, 15 friends, 5 giant bosses, and 10 hidden secrets**. The game uses original Super Dog characters and procedural models, with free exploration inspired by Super Bear Adventure.
 
+## Play online
+
+**https://hellovlt.github.io/super-dog-island-adventure/** — the published game. Chrome, Edge, or Safari can install it
+(address bar install icon, or Share → Add to Home Screen) and it then plays offline, with no terminal and no server.
+Progress, drawings, and settings live in the browser that plays it, so each device keeps its own.
+
 ## Play locally
 
 Run `npm start` from this folder, then open **http://localhost:5173/**. Node.js 18+ and WebGL 2 are required. Three.js is included in `vendor/`; no package installation or CDN access is needed to play. Google Fonts is optional and has system-font fallbacks.

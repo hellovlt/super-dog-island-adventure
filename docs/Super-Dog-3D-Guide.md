@@ -1,6 +1,11 @@
 # Super Dog 3D - Game Guide
 
-**Play: http://localhost:5173/**
+**Play: https://hellovlt.github.io/super-dog-island-adventure/**
+
+Open that address on any computer or tablet. To keep it on the home screen, use the install icon in the address bar
+(Chrome or Edge) or Share → Add to Home Screen (iPad). After that the game opens like an app and works without internet.
+
+The game also runs from this computer at **http://localhost:5173/** while the local server is running.
 
 The game and all its menus are in English. Open the link on the computer where the game is installed. If an older tab still shows Russian or question marks, refresh it. Your progress stays saved.
 

@@ -1,5 +1,5 @@
 // Offline service worker: the whole game is cached on install, so it plays with no server and no network.
-const VERSION='superdog-v5-2';
+const VERSION='superdog-v5-3';
 const ASSETS=[
  './','./index.html','./style3d.css','./favicon.svg','./manifest.webmanifest',
  './icon-192.png','./icon-512.png','./icon-maskable.png',
@@ -19,6 +19,10 @@ self.addEventListener('fetch',event=>{
  const request=event.request;
  if(request.method!=='GET'||new URL(request.url).origin!==self.location.origin)return;
  const offline=()=>caches.match(request).then(hit=>hit||(request.mode==='navigate'?caches.match('./index.html'):Promise.reject(new Error('offline'))));
- if(shell.has(new URL(request.url).pathname))event.respondWith(caches.match(request).then(hit=>hit||fetch(request).then(r=>store(request,r)).catch(offline)));
+ // Shell files answer from the cache at once and refresh in the background, so the next load is current.
+ if(shell.has(new URL(request.url).pathname))event.respondWith(caches.match(request).then(hit=>{
+  const fresh=fetch(request).then(r=>store(request,r)).catch(()=>hit);
+  return hit||fresh;
+ }));
  else event.respondWith(fetch(request).then(r=>store(request,r)).catch(offline));
 });
