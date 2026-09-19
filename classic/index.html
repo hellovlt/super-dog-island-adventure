@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f4e9">
+  <meta name="description" content="Super Dog Adventure: six worlds, five friends, two bosses, and real superpowers. A platformer inspired by a child’s drawings.">
+  <title>Super Dog Adventure — A Big Adventure</title>
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="site-shell">
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="Super Dog — home"><span class="brand-mark">✦</span><span>SUPER DOG<span class="brand-small">ADVENTURE CLUB</span></span></a>
+    <div class="header-note"><span class="little-star">✳</span> Imagined by a child. Brought to life for you.</div>
+    <button class="help-button" id="helpButton"><span>?</span> How to play</button>
+  </header>
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <div><div class="eyebrow"><span></span> FROM A SKETCHBOOK TO AN ADVENTURE</div><h1 id="page-title">A little dog.<br class="mobile-break"> <span>A big adventure.</span></h1><p>Six worlds, five lost friends, and one very brave dog.</p></div>
+      <div class="hero-stamp" aria-hidden="true"><span>100%</span> imagination<svg viewBox="0 0 80 25"><path d="M4 14 Q30 1 74 12 M62 3 L75 12 L65 21"/></svg></div>
+    </section>
+    <section class="game-section" aria-label="Super Dog Adventure game">
+      <div class="game-toolbar">
+        <div class="live-label"><span></span> SUPER DOG ADVENTURE <span class="version">/ 02 · A BIG ADVENTURE</span></div>
+        <div class="toolbar-actions">
+          <button id="soundButton" aria-label="Enable sound" aria-pressed="false" title="Sound"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4Z M16 9l5 6m0-6-5 6"/></svg></button>
+          <button id="pauseButton" aria-label="Pause" title="Pause (Esc)" disabled><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+          <button id="fullscreenButton" aria-label="Fullscreen" title="Fullscreen"><svg viewBox="0 0 24 24"><path d="M9 3H3v6m12-6h6v6M3 15v6h6m6 0h6v-6"/></svg></button>
+        </div>
+      </div>
+      <div class="game-viewport" id="gameViewport">
+        <canvas id="game" width="1280" height="650" tabindex="0" aria-label="Super Dog. Arrows to move, Space twice to double jump, X to bark, Shift to dash, Escape to pause."></canvas>
+        <div class="hud" id="hud">
+          <div class="hud-left"><span class="dog-avatar" aria-hidden="true">S</span><div><span class="hud-name">SUPER DOG</span><span id="hearts" aria-label="5 hearts">♥ ♥ ♥ ♥ ♥</span></div></div>
+          <div class="hud-world"><span id="worldLabel">WORLD 01</span><strong id="worldName">Forest Trail</strong></div>
+          <div class="bone-counter"><svg viewBox="0 0 40 28"><path d="M12 9C8 0 0 5 5 11c-8 4-1 13 6 7l17 0c6 7 14-1 7-6 6-6-3-13-8-4Z"/></svg><span id="score">0</span><span class="counter-divider">/</span><span id="totalBones">0</span></div>
+        </div>
+        <div class="game-overlay" id="startOverlay">
+          <div class="start-card"><div class="card-kicker"><span>✦</span> YOUR STORY STARTS HERE</div><h2>SUPER DOG<span>ADVENTURE</span></h2><p>Rescue your friends from the Snake King!<br>Six worlds. Secrets. Real superpowers.</p><button class="primary-button" id="startButton">Let’s go! <span>↗</span></button><button id="newGameButton" class="new-game-button" hidden>New game</button><div class="start-hint" id="savedHint">Double jump · Dash · Super bark</div></div>
+          <div class="dog-callout" aria-hidden="true">That’s you!<svg viewBox="0 0 90 70"><path d="M7 5q70-6 54 51m-12-9 12 12 13-10"/></svg></div>
+          <div class="scene-label"><span>01</span> FOREST TRAIL <span>→</span></div>
+        </div>
+        <div class="center-overlay" id="messageOverlay" hidden><div class="message-card"><div id="messageIcon" class="message-icon">✦</div><div class="card-kicker" id="messageKicker">TAKE A BREAK</div><h2 id="messageTitle">Paws on pause</h2><p id="messageText">Your adventure will be here when you return.</p><button id="continueButton" class="primary-button">Continue <span>→</span></button><button id="restartButton" class="text-button">Start a new game</button></div></div>
+        <div class="toast" id="toast" role="status"></div>
+        <div class="boss-hud" id="bossHud" hidden><span id="bossName">SNAKE KING</span><div><i id="bossHealth"></i></div><small id="bossWarning"></small></div>
+        <div class="touch-controls" id="touchControls"><div><button data-key="ArrowLeft" aria-label="Left">←</button><button data-key="ArrowRight" aria-label="Right">→</button></div><div><button data-key="ShiftLeft" aria-label="Dash">ϟ</button><button data-key="KeyX" aria-label="Super bark">BARK</button><button data-key="Space" aria-label="Jump">↑</button></div></div>
+      </div>
+      <div class="mission-strip" id="missionStrip" hidden><span id="missionText">Find your friend</span><span>★ <b id="starCount">0 / 18</b></span><span>Friends <b id="friendCount">0 / 5</b></span><span class="dash-status ready" id="dashStatus">Dash ready · Shift</span><div class="route-track" aria-hidden="true"><i id="routeFill"></i></div></div>
+      <div class="power-status" id="powerStatus">Space ×2 — double jump</div>
+      <div class="game-bottom"><div class="keyboard-help"><span><kbd>←</kbd><kbd>→</kbd> run</span><span><kbd>Space ×2</kbd> jump</span><span><kbd>X</kbd> super bark</span><span><kbd>Shift</kbd> dash</span></div><span class="save-note"><span></span><span id="saveStatus">Progress saves automatically</span></span></div>
+    </section>
+    <section class="journey" aria-label="Adventure map"><div class="journey-heading"><span class="eyebrow">YOUR ADVENTURE MAP</span><span>Revisit unlocked worlds to find more secrets</span></div><div class="chapter-grid"></div></section>
+    <aside class="creator-note"><span class="sketch-star" aria-hidden="true">✧</span><p>It all began with a pencil and a sheet of paper.<span>The world and hero came from a child’s drawings. The courage is yours.</span></p><span class="handwritten">Imagination is a superpower!</span></aside>
+  </main>
+  <footer><span>SUPER DOG ADVENTURE <span class="footer-dot">·</span> Made for little heroes</span><span id="bestScore">Best: 0 bones</span></footer>
+</div>
+<dialog id="helpDialog">
+  <button class="dialog-close" id="closeHelp" aria-label="Close">×</button><div class="card-kicker">THE SUPER DOG HANDBOOK</div><h2>Paws, cape, let’s go!</h2>
+  <p>Explore six worlds, rescue five friends, and defeat two bosses. Look for friends, chests, and 18 stars along the way.</p>
+  <ul><li><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> — run</li><li><kbd>Space</kbd> / <kbd>↑</kbd> / <kbd>W</kbd> — jump; press again in midair</li><li><kbd>Shift</kbd> / <kbd>C</kbd> — dash through enemies</li><li><kbd>X</kbd> / <kbd>F</kbd> — super bark</li><li><kbd>Esc</kbd> / <kbd>P</kbd> — pause</li></ul>
+  <p>Use super bark to open chests and cages. Magnets attract bones, shields block a hit, hearts heal you, and lightning boosts your bark. Springs bounce you upward. Flags heal you and save a checkpoint.</p>
+  <p class="help-footnote">On a phone, use the buttons below the game. Progress is saved in this browser: select Continue after reloading. Find the world map beneath the game.</p>
+  <button class="primary-button" id="gotItButton">Got it <span>→</span></button>
+</dialog>
+  <script type="module" src="../game.js"></script>
+</body>
+</html>

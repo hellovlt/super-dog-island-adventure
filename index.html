@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+ <meta name="theme-color" content="#b8e8ef"><title>Super Dog — 3D Island Adventure</title>
+ <meta name="description" content="A 3D Super Dog adventure inspired by a child’s drawings. Explore five worlds, rescue friends, and defeat giant bosses.">
+ <link rel="icon" href="./favicon.svg"><link rel="apple-touch-icon" href="./icon-192.png"><link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./style3d.css">
+</head>
+<body>
+<main id="app">
+ <canvas id="world" tabindex="0" aria-label="Super Dog 3D world. WASD to move, Space to jump, X to bark, E to interact."></canvas>
+ <div class="vignette" aria-hidden="true"></div>
+ <header class="topbar"><a class="brand" href="./"><span class="paw">✦</span> SUPER DOG <small>ISLAND ADVENTURE</small></a><div class="tools"><button id="sound" aria-label="Enable sound" title="Sound" aria-pressed="false">♫</button><button id="help" aria-label="How to play" title="How to play">?</button><button id="fullscreen" aria-label="Fullscreen" title="Fullscreen">⛶</button><button id="pause" aria-label="Pause" title="Pause · Esc" hidden>Ⅱ</button></div></header>
+ <section id="menu" class="menu">
+  <div class="menu-copy"><div class="eyebrow"><span></span> 5 WORLDS · 10 SECRETS · 5 GIANTS</div><h1>SUPER<br><span>DOG</span><i>A big adventure.<br>A little superhero.</i></h1>
+  <p>A discovery over every hill.<br>A friend behind every cage.<br>You have a cape. And a very loud woof.</p>
+  <fieldset class="difficulty"><legend>Adventure difficulty</legend><div><button type="button" data-difficulty="easy" aria-pressed="false">Easy <small>7 ♥</small></button><button type="button" data-difficulty="normal" aria-pressed="true">Normal <small>5 ♥</small></button><button type="button" data-difficulty="hard" aria-pressed="false">Hard <small>3 ♥</small></button></div><p id="difficultyDescription" aria-live="polite">5 hearts · regular enemies · falls cost 1 heart</p></fieldset>
+  <div id="levelPicker" class="level-picker" aria-label="Choose a level"></div><p id="levelDescription" class="level-description"></p>
+  <button id="play" class="primary">Let’s go, Super Dog! <span>↗</span></button><button id="album" class="text-button">✧ Secret album · 0 / 10</button><button id="draw" class="text-button">✎ Draw on Super Dog’s cape</button><button id="wardrobe" class="text-button">◆ Wardrobe</button><button id="settings" class="text-button">⚙ Settings</button><button id="newGame" class="text-button" hidden>Start a new adventure</button>
+  </div><button id="drawCard" class="postcard" type="button"><span>✎</span><div>IMAGINED BY A CHILD<small>Draw your own for Super Dog’s cape →</small></div></button>
+  <a href="./classic/index.html" class="classic">Play the classic 2D game ↗</a>
+ </section>
+ <section id="hud" hidden aria-label="Game status">
+  <div class="stats"><div id="hearts" class="hearts" aria-label="5 hearts">♥ ♥ ♥ ♥ ♥</div><div class="collectibles"><span><b class="bone-icon">◆</b> <strong id="bones">0</strong><small id="boneTotal"></small></span><span class="star">★ <strong id="stars">0</strong><small>/ 6</small></span><span class="key">⚿ <strong id="keys">0</strong></span></div></div>
+  <div class="mission"><span class="mission-label"><span id="levelLabel">ISLAND MISSION</span> <b id="difficultyBadge">NORMAL</b></span><strong id="objective">Find keys and rescue three friends</strong><div id="friendBadges" class="friend-badges"></div><button id="nextLevel" class="text-button" hidden>Next world →</button></div>
+  <div class="map-wrap"><canvas id="minimap" width="180" height="180" aria-label="Island map"></canvas><span id="zone">Sunny shore</span></div>
+  <div class="desktop-controls"><kbd>W A S D</kbd> move <kbd>Space ×2</kbd> jump <kbd>X</kbd> bark <kbd>Shift</kbd> dash <span>Drag the mouse to orbit</span></div>
+  <div id="interactPrompt" class="interact-prompt" hidden><kbd>E</kbd> <span></span></div>
+  <div class="ability"><span>SUPER BARK</span><div><i id="barkCharge"></i></div><span>DASH</span><div><i id="dashCharge"></i></div></div>
+  <div id="rushHud" class="rush-hud" hidden><b>Bone Rush</b><span id="rushTime"></span><span id="rushCount"></span></div>
+  <div id="bossHud" class="boss-hud" hidden><strong><span id="bossName">SNAKE KING</span> <span id="bossState"></span></strong><div><i id="bossHealth"></i></div></div>
+ </section>
+ <div id="toast" class="toast" role="status" aria-live="polite"></div>
+ <div id="speech" class="speech" hidden role="status" aria-live="polite"><div class="speech-head"><b id="speaker"></b><button id="readAloud" type="button" data-read-aloud aria-pressed="false" aria-label="Read aloud"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div><p id="speechText"></p></div>
+ <div id="touch" class="touch-controls" hidden><div id="joystick" aria-label="Movement joystick"><span></span></div><div class="touch-actions"><button data-action="recenter" aria-label="Put the camera behind Super Dog">◎</button><button data-action="interact" aria-label="Interact">⚿</button><button data-action="dash" aria-label="Dash">➜</button><button data-action="bark" aria-label="Super bark">BARK</button><button data-action="jump" class="jump" aria-label="Jump">↑</button></div><small>Drag across the world to rotate the camera</small></div>
+ <section id="modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-card"><div class="eyebrow">SUPER DOG ADVENTURE</div><h2 id="modalTitle">Pause</h2><div id="modalBody"></div><button id="modalPrimary" class="primary">Continue</button><button id="modalSecondary" class="text-button">Main menu</button></div></section>
+ <div id="loading" class="loading">Building the island…</div>
+</main>
+<script type="module" src="./game3d.js"></script>
+<script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));</script>
+</body></html>

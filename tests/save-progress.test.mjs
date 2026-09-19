@@ -1,0 +1,5 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {Adventure3D,hasProgress,BONES} from '../adventure3d.js';
+test('a save written by a reload with no play is not an adventure to continue',()=>{assert.equal(hasProgress(null),false);assert.equal(hasProgress(new Adventure3D().snapshot()),false);const g=new Adventure3D();g.start();assert.equal(hasProgress(g.snapshot()),false);});
+test('collected, rescued, checkpoints, secrets, later worlds and legacy v3 saves all count as progress',()=>{const g=new Adventure3D();g.start();g.collected.add(BONES[0].id??0);assert.equal(hasProgress(g.snapshot()),true);const base=new Adventure3D().snapshot();assert.equal(hasProgress({...base,secrets:['s1']}),true);assert.equal(hasProgress({...base,level:1}),true);assert.equal(hasProgress({...base,progress:{0:{...base.progress[0],checkpoint:'bridge'}}}),true);assert.equal(hasProgress({version:3,collected:[],rescued:['peach'],defeated:[],checkpoint:'home'}),true);assert.equal(hasProgress({version:3,collected:[],rescued:[],defeated:[],checkpoint:'home'}),false);});
