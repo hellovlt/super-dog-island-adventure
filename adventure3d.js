@@ -50,6 +50,11 @@ export class Adventure3D {
  get bonesAvailable(){return Math.max(0,this.bonesEarned-spentBones(this.wardrobe));}
  buy(id){const r=buyItem(this.wardrobe,id,this.bonesAvailable);if(r.ok)this.wardrobe=r.wardrobe;return r;}
  wear(id){const r=wearItem(this.wardrobe,id,this.secrets);if(r.ok)this.wardrobe=r.wardrobe;return r;}
+ // Starting over clears the adventure itself, but a child keeps the clothes they bought,
+ // their best race times, and the difficulty a grown-up chose.
+ freshStart(){const fresh=new Adventure3D(null,{difficulty:this.difficulty});
+  fresh.wardrobe={owned:[...this.wardrobe.owned],wearing:{...this.wardrobe.wearing}};
+  fresh.challenges={...this.challenges};return fresh.snapshot();}
  selectLevel(level){if(!Number.isInteger(level)||level<0||level>=this.unlocked)return false;const save=this.snapshot();save.level=level;Object.assign(this,new Adventure3D(save));return true;}
  advance(){return this.boss.hp<=0&&this.level<4?this.selectLevel(this.level+1):false;}
  nearbySecret(){return this.world.EGGS.find(e=>!this.secrets.has(e.id)&&distance(this.player,e)<2.6&&Math.abs(this.player.y-e.y)<1.5&&clearSight(eye(this.player),eye(e),this.solids));}
