@@ -381,6 +381,12 @@ function updateReadAloud(){for(const b of document.querySelectorAll('[data-read-
 function toggleReadAloud(){readAloud=!readAloud;try{localStorage.setItem(READ_STORAGE,readAloud?'on':'off');}catch{}updateReadAloud();if(readAloud)speak($('speech').hidden?'Reading aloud is on.':$('speechText').textContent);else if('speechSynthesis' in window)speechSynthesis.cancel();}
 function showSpeech(name,text){if(!text)return;$('speaker').textContent=name;$('speechText').textContent=text;$('speech').hidden=false;speechUntil=performance.now()+Math.max(4200,text.length*75);speak(text);}
 $('readAloud').onclick=toggleReadAloud;updateReadAloud();
+// A new version arrived while the game was open: take it now in the menu, or offer it during play.
+addEventListener('superdog-update',()=>{
+ if(menuMode&&$('modal').hidden){location.reload();return;}
+ $('updateBar').hidden=false;
+});
+$('updateNow').onclick=()=>location.reload();
 function toast(text){if(!text)return;$('toast').textContent=text;$('toast').classList.add('show');toastUntil=performance.now()+3800;}
 // Browsers only allow audio after a tap or key press, so the context is created on first use.
 let master=null,sfxBus=null,music=null,coinStreak=0,coinStreakUntil=0;const STREAK=[0,2,4,7,9,12,14,16,19,21,24];

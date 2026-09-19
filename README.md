@@ -8,6 +8,15 @@ An English-language third-person adventure inspired by a child's drawings: **5 w
 (address bar install icon, or Share → Add to Home Screen) and it then plays offline, with no terminal and no server.
 Progress, drawings, and settings live in the browser that plays it, so each device keeps its own.
 
+## Updates
+
+Pushing to `main` publishes the game: GitHub Pages rebuilds within about a minute, with no build step or workflow.
+
+Players do not always see a new version instantly. GitHub asks browsers to keep files for ten minutes, and the
+service worker serves its cached copy first while fetching the update behind it. When the new version is ready the
+game reloads itself if the player is sitting in the menu, or offers **A new version of the game is ready · Play it**
+during play, so nobody is interrupted mid-jump. Worst case, the update arrives the next time the game is opened.
+
 ## Play locally
 
 Run `npm start` from this folder, then open **http://localhost:5173/**. Node.js 18+ and WebGL 2 are required. Three.js is included in `vendor/`; no package installation or CDN access is needed to play. Google Fonts is optional and has system-font fallbacks.

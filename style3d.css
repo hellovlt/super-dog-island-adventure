@@ -57,3 +57,6 @@ body.no-hints .desktop-controls,body.no-hints .touch-controls small{display:none
 .party-join{display:flex;gap:8px}.party-join input{flex:1;min-height:52px;border-radius:14px;border:2px solid #315c4933;background:#fff;font:900 24px/1 Nunito,system-ui;letter-spacing:4px;text-align:center;text-transform:uppercase;padding:0 8px}.party-join .primary{min-width:104px;padding:14px 18px}
 .party-list{list-style:none;margin:8px 0 14px;padding:0;display:grid;gap:6px}.party-list li{background:#fff;border:2px solid #315c4914;border-radius:12px;padding:9px 12px;font-size:14px}.party-list small{color:#5b6e60;font-weight:700;margin-left:6px}
 @media(max-width:760px){.party-hud{left:16px;top:196px;font-size:12px}.tag{font-size:11px;padding:3px 8px}.party-code{font-size:30px;letter-spacing:4px}}
+.update-bar{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);display:flex;align-items:center;gap:12px;background:#fff9ed;border:2px solid #315c4926;border-radius:16px;padding:10px 12px 10px 16px;box-shadow:0 6px 0 #274b3422;font-weight:800;font-size:14px;color:#29463d;z-index:11}
+.update-bar button{min-height:40px;padding:0 16px;border-radius:12px;background:#285844;color:#fff9e8;font-weight:900}
+@media(max-width:760px){.update-bar{bottom:auto;top:78px;font-size:13px;max-width:calc(100vw - 24px)}}
