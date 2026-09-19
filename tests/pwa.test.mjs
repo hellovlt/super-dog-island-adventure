@@ -18,11 +18,11 @@ test('everything the page loads is cached for offline play',()=>{
  const list=cached(),html=read('index.html');
  for(const file of ['index.html','style3d.css','favicon.svg','manifest.webmanifest'])assert.ok(list.includes(file),`${file} is cached`);
  // Follow the module graph from the page and require every file on the way.
- const seen=new Set(),queue=[...html.matchAll(/src="\.\/([^"]+\.js)"/g)].map(m=>m[1]);
+ const seen=new Set(),queue=[...html.matchAll(/src="\.\/([^"]+\.m?js)"/g)].map(m=>m[1]);
  while(queue.length){const file=queue.pop();if(seen.has(file))continue;seen.add(file);
   assert.ok(list.includes(file),`${file} is imported but not cached for offline play`);
   const dir=file.includes('/')?file.slice(0,file.lastIndexOf('/')+1):'';
-  for(const m of read(file).matchAll(/from'?\s*'\.\/([^']+\.js)'/g))queue.push((dir+m[1]).replace(/^\.\//,''));}
+  for(const m of read(file).matchAll(/from\s*['"]\.\/([^'"]+\.m?js)['"]/g))queue.push((dir+m[1]).replace(/^\.\//,''));}
  assert.ok(seen.size>=10,`followed the whole module graph, saw ${seen.size}`);
  for(const file of list)if(file&&!file.endsWith('/'))assert.ok(existsSync(new URL('../'+file,import.meta.url)),`cached ${file} exists`);
 });

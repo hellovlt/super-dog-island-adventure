@@ -16,12 +16,13 @@
   <p>A discovery over every hill.<br>A friend behind every cage.<br>You have a cape. And a very loud woof.</p>
   <fieldset class="difficulty"><legend>Adventure difficulty</legend><div><button type="button" data-difficulty="easy" aria-pressed="false">Easy <small>7 ♥</small></button><button type="button" data-difficulty="normal" aria-pressed="true">Normal <small>5 ♥</small></button><button type="button" data-difficulty="hard" aria-pressed="false">Hard <small>3 ♥</small></button></div><p id="difficultyDescription" aria-live="polite">5 hearts · regular enemies · falls cost 1 heart</p></fieldset>
   <div id="levelPicker" class="level-picker" aria-label="Choose a level"></div><p id="levelDescription" class="level-description"></p>
-  <button id="play" class="primary">Let’s go, Super Dog! <span>↗</span></button><div class="menu-links"><button id="album" class="text-button">✧ Secret album · 0 / 10</button><button id="draw" class="text-button">✎ Draw on Super Dog’s cape</button><button id="wardrobe" class="text-button">◆ Wardrobe</button><button id="settings" class="text-button">⚙ Settings</button><a href="./classic/index.html" class="classic">Play the classic 2D game ↗</a></div><button id="newGame" class="text-button" hidden>Start a new adventure</button>
+  <button id="play" class="primary">Let’s go, Super Dog! <span>↗</span></button><div class="menu-links"><button id="album" class="text-button">✧ Secret album · 0 / 10</button><button id="draw" class="text-button">✎ Draw on Super Dog’s cape</button><button id="wardrobe" class="text-button">◆ Wardrobe</button><button id="friends" class="text-button">👣 Play with friends</button><button id="settings" class="text-button">⚙ Settings</button><a href="./classic/index.html" class="classic">Play the classic 2D game ↗</a></div><button id="newGame" class="text-button" hidden>Start a new adventure</button>
   </div><button id="drawCard" class="postcard" type="button"><span>✎</span><div>IMAGINED BY A CHILD<small>Draw your own for Super Dog’s cape →</small></div></button>
  </section>
  <section id="hud" hidden aria-label="Game status">
   <div class="stats"><div id="hearts" class="hearts" aria-label="5 hearts">♥ ♥ ♥ ♥ ♥</div><div class="collectibles"><span><b class="bone-icon">◆</b> <strong id="bones">0</strong><small id="boneTotal"></small></span><span class="star">★ <strong id="stars">0</strong><small>/ 6</small></span><span class="key">⚿ <strong id="keys">0</strong></span></div></div>
   <div class="mission"><span class="mission-label"><span id="levelLabel">ISLAND MISSION</span> <b id="difficultyBadge">NORMAL</b></span><strong id="objective">Find keys and rescue three friends</strong><div id="friendBadges" class="friend-badges"></div><button id="nextLevel" class="text-button" hidden>Next world →</button></div>
+  <button id="partyHud" class="party-hud" hidden type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="9" r="4" fill="currentColor"/><circle cx="17" cy="10" r="3" fill="currentColor" opacity=".7"/><path d="M2 20c0-3.3 2.7-6 6-6s6 2.7 6 6" fill="none" stroke="currentColor" stroke-width="2.4"/></svg><span id="partyCount"></span></button>
   <div class="map-wrap"><canvas id="minimap" width="180" height="180" aria-label="Island map"></canvas><span id="zone">Sunny shore</span></div>
   <div class="desktop-controls"><kbd>W A S D</kbd> move <kbd>Space ×2</kbd> jump <kbd>X</kbd> bark <kbd>Shift</kbd> dash <span>Drag the mouse to orbit</span></div>
   <div id="interactPrompt" class="interact-prompt" hidden><kbd>E</kbd> <span></span></div>
@@ -29,6 +30,7 @@
   <div id="rushHud" class="rush-hud" hidden><b>Bone Rush</b><span id="rushTime"></span><span id="rushCount"></span></div>
   <div id="bossHud" class="boss-hud" hidden><strong><span id="bossName">SNAKE KING</span> <span id="bossState"></span></strong><div><i id="bossHealth"></i></div></div>
  </section>
+ <div id="tags" class="tags" aria-hidden="true"></div>
  <div id="toast" class="toast" role="status" aria-live="polite"></div>
  <div id="speech" class="speech" hidden role="status" aria-live="polite"><div class="speech-head"><b id="speaker"></b><button id="readAloud" type="button" data-read-aloud aria-pressed="false" aria-label="Read aloud"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div><p id="speechText"></p></div>
  <div id="touch" class="touch-controls" hidden><div id="joystick" aria-label="Movement joystick"><span></span></div><div class="touch-actions"><button data-action="recenter" aria-label="Put the camera behind Super Dog">◎</button><button data-action="interact" aria-label="Interact">⚿</button><button data-action="dash" aria-label="Dash">➜</button><button data-action="bark" aria-label="Super bark">BARK</button><button data-action="jump" class="jump" aria-label="Jump">↑</button></div><small>Drag across the world to rotate the camera</small></div>
@@ -36,5 +38,8 @@
  <div id="loading" class="loading">Building the island…</div>
 </main>
 <script type="module" src="./game3d.js"></script>
-<script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));</script>
+<script>/* offline play is for the published game; on localhost the worker would serve yesterday's files */
+if('serviceWorker' in navigator){const local=['localhost','127.0.0.1','::1'].includes(location.hostname);
+ if(local)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));
+ else addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}</script>
 </body></html>

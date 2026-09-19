@@ -7,6 +7,7 @@ import {SLOTS,SLOT_NAMES,WARDROBE,wornItem,owns} from './wardrobe3d.js';
 import {readPad,RUMBLE} from './input3d.js';
 import {SETTINGS_STORAGE,parseSettings,FOLLOW,ZOOM,followYaw} from './settings3d.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
+import {joinParty,makeRoomCode,normalizeCode,isCompleteCode,formatCode,pickName,easeRemote,NAMES,MAX_PLAYERS,CODE_LENGTH} from './multiplayer3d.js';
 const $=id=>document.getElementById(id),canvas=$('world');
 const STORAGE='superdog-island-3d-v4',LEGACY_STORAGE='superdog-island-3d-v3';
 let save=null;try{save=JSON.parse(localStorage.getItem(STORAGE)||localStorage.getItem(LEGACY_STORAGE)||'null');}catch{}
@@ -120,13 +121,18 @@ const dog=dogModel();scene.add(dog);
 const antenna=new T.Group();dog.add(antenna);cylinder(0xe4c967,0,2.12,.2,.025,.45,antenna);ball(0xffdf78,0,2.38,.2,.14,antenna);antenna.visible=false;
 const heroCrown=new T.Group();dog.add(heroCrown);cylinder(0xf3c65b,0,2,.2,.3,.15,heroCrown);for(const x of [-.2,0,.2])mesh('cone',0xffdb78,x,2.2,.2,.08,.3,.08,heroCrown);heroCrown.visible=false;
 // Wardrobe hats sit where the secret crown does; applyLook() shows the one being worn.
+const HAT_SHAPES={
+ 'hat-party':h=>{mesh('cone',0xf28bb3,0,2.4,.12,.3,.72,.3,h);cylinder(0xfff3a8,0,2.2,.12,.25,.06,h);ball(0xfff3a8,0,2.8,.12,.1,h);},
+ 'hat-cowboy':h=>{cylinder(0x9c6b3f,0,2.05,.12,.66,.06,h);cylinder(0xb07c49,0,2.25,.12,.33,.4,h);cylinder(0x5e3d24,0,2.12,.12,.34,.07,h);},
+ 'hat-chef':h=>{cylinder(0xfbfaf4,0,2.2,.12,.32,.4,h);for(const x of [-.17,0,.17])ball(0xffffff,x,2.5,.12,.22,h);},
+ 'hat-pirate':h=>{cube(0x2f3033,0,2.16,.12,.95,.2,.46,h);mesh('cone',0x2f3033,0,2.36,.12,.36,.34,.28,h);ball(0xf5f1e6,0,2.2,.36,.07,h);},
+ 'hat-wizard':h=>{const c=mesh('cone',0x6b4fb4,0,2.55,.1,.36,1.05,.36,h);c.rotation.z=.16;cylinder(0x4c3888,0,2.08,.12,.42,.06,h);ball(0xffd54f,.05,2.35,.44,.08,h);},
+ 'hat-antenna':h=>{cylinder(0xe4c967,0,2.12,.2,.025,.45,h);ball(0xffdf78,0,2.38,.2,.14,h);},
+ 'hat-crown':h=>{cylinder(0xf3c65b,0,2,.2,.3,.15,h);for(const x of [-.2,0,.2])mesh('cone',0xffdb78,x,2.2,.2,.08,.3,.08,h);},
+};
+function wearHat(id,parent){const h=new T.Group();parent.add(h);HAT_SHAPES[id]?.(h);return h;}
 const hats={'hat-antenna':antenna,'hat-crown':heroCrown};
-function hat(id,build){const h=new T.Group();dog.add(h);build(h);h.visible=false;hats[id]=h;}
-hat('hat-party',h=>{mesh('cone',0xf28bb3,0,2.4,.12,.3,.72,.3,h);cylinder(0xfff3a8,0,2.2,.12,.25,.06,h);ball(0xfff3a8,0,2.8,.12,.1,h);});
-hat('hat-cowboy',h=>{cylinder(0x9c6b3f,0,2.05,.12,.66,.06,h);cylinder(0xb07c49,0,2.25,.12,.33,.4,h);cylinder(0x5e3d24,0,2.12,.12,.34,.07,h);});
-hat('hat-chef',h=>{cylinder(0xfbfaf4,0,2.2,.12,.32,.4,h);for(const x of [-.17,0,.17])ball(0xffffff,x,2.5,.12,.22,h);});
-hat('hat-pirate',h=>{cube(0x2f3033,0,2.16,.12,.95,.2,.46,h);mesh('cone',0x2f3033,0,2.36,.12,.36,.34,.28,h);ball(0xf5f1e6,0,2.2,.36,.07,h);});
-hat('hat-wizard',h=>{const c=mesh('cone',0x6b4fb4,0,2.55,.1,.36,1.05,.36,h);c.rotation.z=.16;cylinder(0x4c3888,0,2.08,.12,.42,.06,h);ball(0xffd54f,.05,2.35,.44,.08,h);});
+for(const id of Object.keys(HAT_SHAPES))if(!hats[id]){const h=wearHat(id,dog);h.visible=false;hats[id]=h;}
 function applyLook(){const secrets=game.secrets,w=game.wardrobe;const hatId=wornItem(w,'hat',secrets).id;for(const [id,h] of Object.entries(hats))h.visible=id===hatId;const fur=wornItem(w,'fur',secrets);for(const m of dog.userData.fur)m.material=mat(fur.body);dog.userData.head.material=mat(fur.head);const cape=wornItem(w,'cape',secrets).color;if(cape!==capeColor){capeColor=cape;applyDrawing(drawing);}}
 // Guides are small procedural creatures; a floating speech bubble marks one you have not talked to yet.
 function guideModel(kind){const g=new T.Group(),eyes=(y,z,gap=.16,r=.07)=>{for(const x of [-gap,gap]){ball(0xffffff,x,y,z,r*1.5,g);ball(0x2b2d2f,x,y,z+r*.9,r*.8,g);}};
@@ -145,6 +151,61 @@ const trophyParts=[cylinder(0xcfd6d8,0,.12,0,.3,.42,trophy),cylinder(0xcfd6d8,0,
 for(const s of [-1,1]){const h=new T.Mesh(new T.TorusGeometry(.13,.035,6,12),mat(0xcfd6d8));h.position.set(s*.33,.14,0);h.rotation.y=Math.PI/2;trophy.add(h);trophyParts.push(h);}
 const rushBones=game.world.RUSH.bones.map(b=>{const m=boneModel();m.traverse(o=>{if(o.isMesh)o.material=glowMat(0xffd166,0xffa31a,.55);});m.scale.setScalar(1.25);m.position.set(b.x,b.y,b.z);m.visible=false;scene.add(m);const beam=new T.Mesh(new T.CylinderGeometry(.1,.1,9,8,1,true),new T.MeshBasicMaterial({color:0xfff1a8,transparent:true,opacity:.28,depthWrite:false}));beam.position.set(b.x,4.5,b.z);beam.visible=false;scene.add(beam);return {data:b,mesh:m,beam};});
 function showRushResult(e){game.pause();updateCampaignUI();showModal('Bone Rush complete!',`<div class="results"><span>${e.time}<small>seconds</small></span><span>${e.best}<small>best time</small></span></div><p>${e.first?`<b>+${e.reward} bones</b> for your wardrobe. Try again to beat your best time!`:e.time<=e.best?'A new best time! Can you go even faster?':'Your best time still stands. One more try?'}</p>`,'Keep exploring',()=>{game.resume();canvas.focus();},false);speak(`Bone Rush complete in ${e.time} seconds!`);}
+// Friends who joined with the same code: their dogs, their names, and their barks.
+const friendViews=new Map();
+function friendCape(view,look){
+ if(!look.drawing){view.group.userData.cape.material=mat(look.cape);return;}
+ const img=new Image();img.onload=()=>{if(view.look.drawing!==look.drawing)return;
+  const tex=new T.CanvasTexture(stickerCanvas(img,240,272,hex(look.cape)));tex.colorSpace=T.SRGBColorSpace;
+  const edge=mat(look.cape),face=new T.MeshStandardMaterial({map:tex,roughness:.9});
+  view.group.userData.cape.material=[edge,edge,edge,edge,face,face];};img.src=look.drawing;
+}
+function makeFriendView(look){
+ const g=dogModel(look.fur,1);scene.add(g);
+ g.userData.cape.material=mat(look.cape);
+ const hat=wearHat(look.hat,g);
+ const tag=document.createElement('div');tag.className='tag';tag.textContent=look.name;$('tags').append(tag);
+ const shadow=new T.Mesh(new T.CircleGeometry(.6,20),new T.MeshBasicMaterial({color:0x3b6546,transparent:true,opacity:.16,depthWrite:false}));
+ shadow.rotation.x=-Math.PI/2;scene.add(shadow);
+ const view={group:g,hat,tag,shadow,look,shown:null,state:null};friendCape(view,look);return view;
+}
+function refreshFriend(view,look){
+ view.look=look;view.tag.textContent=look.name;
+ for(const m of view.group.userData.fur)m.material=mat(look.fur);
+ view.hat.removeFromParent();view.hat=wearHat(look.hat,view.group);
+ friendCape(view,look);
+}
+function dropFriend(id){const view=friendViews.get(id);if(!view)return;view.group.removeFromParent();view.shadow.removeFromParent();view.tag.remove();friendViews.delete(id);}
+function syncFriends(roster){
+ const ids=new Set(roster.map(f=>f.id));
+ for(const id of [...friendViews.keys()])if(!ids.has(id))dropFriend(id);
+ for(const friend of roster){
+  const view=friendViews.get(friend.id);
+  if(!view)friendViews.set(friend.id,makeFriendView(friend.look));
+  else if(JSON.stringify(view.look)!==JSON.stringify(friend.look))refreshFriend(view,friend.look);
+ }
+ updatePartyHud();
+}
+const tagPoint=new T.Vector3();
+function drawFriends(dt,anim){
+ for(const [id,view] of friendViews){
+  const friend=party?.friends.get(id),state=friend?.state;
+  const here=!!state&&state.level===game.level;
+  view.group.visible=here;view.shadow.visible=here;view.tag.hidden=!here;
+  if(!here)continue;
+  view.shown=view.shown?easeRemote(view.shown,state,dt):{x:state.x,y:state.y,z:state.z,facing:state.facing};
+  const {x,y,z,facing}=view.shown;
+  view.group.position.set(x,y,z);view.group.rotation.y=facing;view.group.rotation.x=state.gliding?.22:0;
+  view.shadow.position.set(x,y+.03,z);
+  view.group.userData.legs.forEach((l,i)=>l.rotation.x=state.moving?Math.sin(anim*15+i*Math.PI)*.5:0);
+  view.group.userData.tail.rotation.z=Math.sin(anim*(state.moving?19:8))*(state.moving?.35:.5);
+  view.group.userData.cape.rotation.x=state.gliding?-1.3:-.25+(state.moving?Math.sin(anim*16)*.14-.25:Math.sin(anim*3)*.06);
+  tagPoint.set(x,y+2.6,z).project(camera);
+  const onScreen=tagPoint.z<1&&Math.abs(tagPoint.x)<1.3&&Math.abs(tagPoint.y)<1.3;
+  view.tag.hidden=!onScreen;
+  if(onScreen){view.tag.style.left=`${(tagPoint.x*.5+.5)*innerWidth}px`;view.tag.style.top=`${(-tagPoint.y*.5+.5)*innerHeight}px`;}
+ }
+}
 const dogShadow=new T.Mesh(new T.CircleGeometry(.65,24),new T.MeshBasicMaterial({color:0x3b6546,transparent:true,opacity:.18,depthWrite:false}));dogShadow.rotation.x=-Math.PI/2;scene.add(dogShadow);
 const cages=new Map(),friendModels=new Map();
 for(const f of FRIENDS){const g=group(f.x,f.y,f.z);const bars=new T.Group();g.add(bars);cylinder(0x778d7e,0,.08,0,1.5,.16,bars);cylinder(0x91a499,0,2.65,0,1.5,.12,bars);for(let i=0;i<10;i++){const a=i*Math.PI/5;cylinder(0x7b9083,Math.sin(a)*1.4,1.4,Math.cos(a)*1.4,.055,2.5,bars);}const lock=cube(0xeab956,0,1.1,1.46,.45,.55,.16,bars);ball(0x9a8039,0,1.16,1.56,.07,bars);const friend=dogModel(f.color,.65);g.add(friend);friend.position.y=.12;friendModels.set(f.id,friend);cages.set(f.id,bars);}
@@ -244,9 +305,74 @@ const hatIcons={'hat-none':'<circle cx="20" cy="20" r="11" fill="none" stroke="#
 function swatch(item){if(item.slot==='cape')return `<span class="swatch" style="background:${hex(item.color)}"></span>`;if(item.slot==='fur')return `<span class="swatch" style="background:linear-gradient(135deg,${hex(item.head)} 50%,${hex(item.body)} 50%)"></span>`;return `<span class="swatch hat-swatch"><svg viewBox="0 0 40 40" aria-hidden="true">${hatIcons[item.id]||''}</svg></span>`;}
 let wardrobeTab='cape';
 function wardrobeMarkup(){return `<p class="wallet"><b class="bone-icon">◆</b> <strong>${game.bonesAvailable}</strong> bones to spend <small>${game.bonesEarned} collected in all worlds</small></p><div class="shelf-tabs" role="tablist">${SLOTS.map(slot=>`<button type="button" role="tab" data-tab="${slot}" aria-selected="${slot===wardrobeTab}">${SLOT_NAMES[slot]}</button>`).join('')}</div>`+SLOTS.map(slot=>`<section class="shelf-group${slot===wardrobeTab?' active':''}"><h3 class="shelf">${SLOT_NAMES[slot]}</h3><div class="shelf-items">${WARDROBE[slot].map(i=>({...i,slot})).map(item=>{const mine=owns(game.wardrobe,item.id,game.secrets),worn=wornItem(game.wardrobe,slot,game.secrets).id===item.id,short=!mine&&(item.secret||item.price>game.bonesAvailable);return `<button type="button" class="item${worn?' worn':''}" data-item="${item.id}" aria-pressed="${worn}"${short?' aria-disabled="true"':''}>${swatch(item)}<span class="item-name">${item.name}</span><span class="item-state">${worn?'Wearing':mine?'Wear':item.secret?'Find a secret':`◆ ${item.price}`}</span></button>`;}).join('')}</div></section>`).join('');}
-function renderWardrobe(){$('modalBody').innerHTML=wardrobeMarkup();for(const t of $('modalBody').querySelectorAll('[data-tab]'))t.onclick=()=>{wardrobeTab=t.dataset.tab;renderWardrobe();$('modalBody').querySelector(`[data-tab="${wardrobeTab}"]`)?.focus();};for(const b of $('modalBody').querySelectorAll('[data-item]'))b.onclick=()=>{const id=b.dataset.item,mine=owns(game.wardrobe,id,game.secrets),r=mine?game.wear(id):game.buy(id);if(!r.ok){toast(r.reason);tone('hurt');return;}tone(mine?'jump':'key');if(!mine)burst(dog.position.x,dog.position.y+1.6,dog.position.z,0xffdc72,16);storeSave();applyLook();updateCampaignUI();renderWardrobe();$('modalBody').querySelector(`[data-item="${id}"]`)?.focus();};}
+function renderWardrobe(){$('modalBody').innerHTML=wardrobeMarkup();for(const t of $('modalBody').querySelectorAll('[data-tab]'))t.onclick=()=>{wardrobeTab=t.dataset.tab;renderWardrobe();$('modalBody').querySelector(`[data-tab="${wardrobeTab}"]`)?.focus();};for(const b of $('modalBody').querySelectorAll('[data-item]'))b.onclick=()=>{const id=b.dataset.item,mine=owns(game.wardrobe,id,game.secrets),r=mine?game.wear(id):game.buy(id);if(!r.ok){toast(r.reason);tone('hurt');return;}tone(mine?'jump':'key');if(!mine)burst(dog.position.x,dog.position.y+1.6,dog.position.z,0xffdc72,16);storeSave();applyLook();updateCampaignUI();party?.sendLook();renderWardrobe();$('modalBody').querySelector(`[data-item="${id}"]`)?.focus();};}
 function openWardrobe(){showModal('Dog house wardrobe','','Done',()=>{},false);$('modal').classList.add('wardrobe');previewMode=true;$('menu').style.visibility='hidden';renderWardrobe();}
 $('wardrobe').onclick=openWardrobe;
+// Play with friends: a five-letter code, up to eight dogs on one island.
+let party=null,partySendAt=0;const greeted=new Set();
+const NAME_STORAGE='superdog-name';
+let myName=(()=>{try{return localStorage.getItem(NAME_STORAGE)||pickName();}catch{return pickName();}})();
+const myLook=()=>({name:myName,cape:wornItem(game.wardrobe,'cape',game.secrets).color,hat:wornItem(game.wardrobe,'hat',game.secrets).id,
+ fur:wornItem(game.wardrobe,'fur',game.secrets).body,drawing:settings.shareDrawing&&drawing?.cape?drawing.image:null});
+function updatePartyHud(){
+ const count=party?party.roster().length:0;
+ $('partyHud').hidden=!party;$('partyCount').textContent=count?`${count} friend${count>1?'s':''} · ${party.code}`:`Waiting · ${party?.code??''}`;
+ if(!$('modal').hidden&&$('modal').classList.contains('party'))renderParty();
+}
+function startParty(code){
+ if(party)party.leave();
+ const joinedAt=Date.now();
+ try{
+  party=joinParty(code,{look:myLook,
+   onRoster:roster=>{
+    // Eight dogs fit on one island: a late arrival steps back out again.
+    if(roster.length+1>MAX_PLAYERS&&Date.now()-joinedAt<9000){leaveParty();toast('That game is full. Eight friends are already playing.');return;}
+    const taken=roster.map(f=>f.look?.name).filter(Boolean);
+    // Two children can pick the same name; the one who arrived later takes another.
+    if(taken.includes(myName)&&Date.now()-joinedAt<9000){myName=pickName(taken);try{localStorage.setItem(NAME_STORAGE,myName);}catch{}party?.sendLook();toast(`That name was taken, so you are ${myName}.`);}
+    // Greet a friend once their name has arrived, not at the moment the connection opens.
+    for(const friend of roster)if(friend.look?.name&&friend.look.name!=='Friend'&&!greeted.has(friend.id)){greeted.add(friend.id);toast(`${friend.look.name} joined the island!`);tone('checkpoint');}
+    syncFriends(roster);},
+   onLeave:(id,gone)=>{greeted.delete(id);dropFriend(id);if(gone?.look?.name&&gone.look.name!=='Friend')toast(`${gone.look.name} left.`);},
+   onBark:(id,friend)=>{const view=friendViews.get(id);if(view?.shown){tone('bark',.9);burst(view.shown.x,view.shown.y+1.2,view.shown.z,0xfff0b8,8);}},
+   onError:()=>toast('Could not reach your friends. Check the internet connection.')});
+ }catch(error){toast('Could not start a game with friends. Check the internet connection.');return;}
+ try{localStorage.setItem(NAME_STORAGE,myName);}catch{}
+ updatePartyHud();renderParty();
+}
+function leaveParty(){if(!party)return;party.leave();party=null;greeted.clear();for(const id of [...friendViews.keys()])dropFriend(id);updatePartyHud();renderParty();}
+function partyMarkup(){
+ if(!party)return `<p>Play on the same island with up to ${MAX_PLAYERS} friends. One of you starts a game and reads out the code; the others type it in.</p>
+ <div class="party-name"><span class="set-label">You are</span><select id="partyName">${NAMES.map(n=>`<option${n===myName?' selected':''}>${n}</option>`).join('')}</select></div>
+ <button type="button" class="primary" data-party="start">Start a game</button>
+ <p class="party-or">or join a friend</p>
+ <div class="party-join"><input id="partyCode" inputmode="latin" autocomplete="off" spellcheck="false" maxlength="7" placeholder="CODE" aria-label="Friend's code"><button type="button" class="primary" data-party="join">Join</button></div>`;
+ const roster=party.roster();
+ return `<p>Read this code to your friends. They type it into <b>Join</b>.</p><div class="party-code">${formatCode(party.code)}</div>
+ <h3 class="shelf">On the island (${roster.length+1}/${MAX_PLAYERS})</h3>
+ <ul class="party-list"><li><b>${myName}</b> <small>you · ${theme.name}</small></li>${roster.map(f=>`<li><b>${f.look.name}</b> <small>${f.state?LEVELS[f.state.level].name:'arriving…'}</small></li>`).join('')}</ul>
+ ${roster.length?'':'<p class="set-note">Nobody has joined yet. The code works as long as this screen stays open.</p>'}
+ <div class="set-row"><span class="set-label">Show my drawing to friends</span><button type="button" class="set-switch" data-party="drawing" aria-pressed="${!!settings.shareDrawing}"><span></span></button></div>
+ <button type="button" class="text-button" data-party="leave">Leave the game</button>`;
+}
+function renderParty(){
+ if($('modal').hidden||!$('modal').classList.contains('party'))return;
+ $('modalBody').innerHTML=partyMarkup();
+ const code=$('modalBody').querySelector('#partyCode');
+ if(code)code.oninput=()=>{const raw=normalizeCode(code.value);code.value=raw;};
+ const name=$('modalBody').querySelector('#partyName');
+ if(name)name.onchange=()=>{myName=name.value;try{localStorage.setItem(NAME_STORAGE,myName);}catch{}party?.sendLook();};
+ for(const button of $('modalBody').querySelectorAll('[data-party]'))button.onclick=()=>{
+  const what=button.dataset.party;
+  if(what==='start')startParty(makeRoomCode());
+  else if(what==='join'){const typed=normalizeCode($('modalBody').querySelector('#partyCode').value);
+   if(!isCompleteCode(typed)){toast(`A code has ${CODE_LENGTH} letters and numbers.`);return;}startParty(typed);}
+  else if(what==='leave')leaveParty();
+  else if(what==='drawing'){settings.shareDrawing=!settings.shareDrawing;saveSettings();party?.sendLook();renderParty();}
+ };
+}
+function openParty(){const wasPlaying=game.status==='playing';game.pause();showModal('Play with friends','','Done',()=>{if(wasPlaying)game.resume();canvas.focus();},false);$('modal').classList.add('party');renderParty();}
+$('friends').onclick=openParty;$('partyHud').onclick=openParty;
 function saveDrawing(d){try{if(d)localStorage.setItem(DRAWING_STORAGE,JSON.stringify(d));else localStorage.removeItem(DRAWING_STORAGE);}catch{toast('This browser could not save the drawing.');return false;}applyDrawing(d);return true;}
 $('draw').onclick=openStudio;$('drawCard').onclick=openStudio;
 const READ_STORAGE='superdog-read-aloud';let readAloud=(()=>{try{return localStorage.getItem(READ_STORAGE)==='on';}catch{return false;}})(),speechUntil=0;
@@ -310,7 +436,7 @@ let recenterT=0,padLooking=false;
 function recenterCamera(){recenterT=.55;}
 function resetInput(){pressed.clear();heldTouch?.clear();actions={};stick={x:0,z:0};drag=null;joystickPointer=null;$('joystick').firstElementChild.style.transform='';}
 function launch(){menuMode=false;$('menu').hidden=true;$('hud').hidden=false;$('pause').hidden=false;$('touch').hidden=!matchMedia('(pointer:coarse), (max-width:760px)').matches;game.start();ui();$('modal').hidden=true;resetInput();yaw=0;pitch=.35;camera.position.set(game.player.x,game.player.y+7,game.player.z+11);camBase.copy(camera.position);canvas.focus();storeSave();toast('WASD — move · Space twice to double jump · Drag the mouse to orbit');}
-function showModal(title,body,label,callback,secondary=true){resetInput();$('modal').classList.remove('wardrobe','settings');$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modalPrimary').textContent=label;modalAction=callback;$('modalSecondary').hidden=!secondary;$('modal').hidden=false;$('modalPrimary').focus({preventScroll:true});$('modal').firstElementChild.scrollTop=0;}
+function showModal(title,body,label,callback,secondary=true){resetInput();$('modal').classList.remove('wardrobe','settings','party');$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modalPrimary').textContent=label;modalAction=callback;$('modalSecondary').hidden=!secondary;$('modal').hidden=false;$('modalPrimary').focus({preventScroll:true});$('modal').firstElementChild.scrollTop=0;}
 function pause(){if(game.status!=='playing')return;game.pause();storeSave();showModal('Taking a break',`<p>Your discoveries and rescued friends are saved. The island will be here when you return!</p><p>Bones: <b>${game.boneCount}/${BONES.length}</b> · Stars: <b>${game.starCount}/6</b></p><p>Difficulty: <b>${game.rules.name}</b>. Change it in the main menu. Your discoveries stay saved; hearts and the current battle reset.</p>`,'Continue adventure',()=>{game.resume();canvas.focus();});$('modalBody').insertAdjacentHTML('beforeend','<button type="button" class="text-button" data-open-settings>⚙ Settings</button>');$('modalBody').querySelector('[data-open-settings]').onclick=openSettings;}
 $('play').onclick=launch;if((save?.version===3||save?.version===4)&&hasProgress(save)){$('play').firstChild.textContent='Continue adventure ';$('newGame').hidden=false;}
 $('newGame').onclick=()=>showModal('Start over?','<p>This will reset discoveries and rescued friends in all five worlds.</p>','Yes, start a new adventure',()=>{resettingSave=true;try{localStorage.setItem(STORAGE,JSON.stringify(new Adventure3D().snapshot()));}catch{}location.reload();});
@@ -342,7 +468,7 @@ function frame(now){requestAnimationFrame(frame);const dt=Math.min((now-last)/10
   game.tick(dt,{x,z,yaw,...actions,glide:pressed.has('Space')||heldTouch.has('jump')||padMove.glide});actions={};
  }
  const frameEvents=game.events.splice(0);if(frameEvents.length)uiTime=1;
- for(const event of frameEvents){tone(event.type,event.type==='coin'?coinRatio(now):1);rumble(event.type);if(event.text&&event.type!=='talk')toast(event.text);if(event.type==='talk')showSpeech(event.speaker,event.text);if(event.type==='rescue')showSpeech(event.speaker,event.line);if(['coin','key','star','rescue','checkpoint','enemy','won','secret'].includes(event.type))storeSave();if(['coin','key','star','rescue','secret'].includes(event.type))burst(game.player.x,game.player.y+1,game.player.z,event.type==='rescue'?0xb9e98a:0xffdc72,event.type==='coin'?4:20);if(event.type==='jump'){squashAmt=.2;squashT=.2;}if(event.type==='dash'&&effectsOn())fovPunch=Math.min(10,fovPunch+6);if(effectsOn())trauma=Math.min(1,trauma+({hurt:.55,bossHit:.4,fall:.3,won:.35}[event.type]||0));if(event.type==='bark'){barkTime=.4;attackRing.position.set(game.player.x,game.player.y+.15,game.player.z);}if(event.type==='dead')showModal('Try again?',`<p>You keep your bones, keys, and rescued friends. Restart from the last flag.</p>`,'Return to checkpoint',()=>{game.retry();canvas.focus();});if(event.type==='secret'){game.pause();updateCampaignUI();showModal('Secret found!',`<p>${event.text}</p><p>${game.secrets.size} / 10 in your album.</p>`,'Keep exploring',()=>{game.resume();canvas.focus();},false);speak(event.text);}if(event.type==='rushWon'){confetti(game.player.x,game.player.y+1.6,game.player.z,50);setTimeout(()=>showRushResult(event),reduceMotion?200:900);}if(event.type==='rescue')confetti(game.player.x,game.player.y+1.5,game.player.z,24);if(event.type==='won'){victoryT=1.8;confetti(game.player.x,game.player.y+2,game.player.z,70);setTimeout(showVictory,reduceMotion?300:1700);}}
+ for(const event of frameEvents){tone(event.type,event.type==='coin'?coinRatio(now):1);rumble(event.type);if(event.text&&event.type!=='talk')toast(event.text);if(event.type==='talk')showSpeech(event.speaker,event.text);if(event.type==='rescue')showSpeech(event.speaker,event.line);if(['coin','key','star','rescue','checkpoint','enemy','won','secret'].includes(event.type))storeSave();if(['coin','key','star','rescue','secret'].includes(event.type))burst(game.player.x,game.player.y+1,game.player.z,event.type==='rescue'?0xb9e98a:0xffdc72,event.type==='coin'?4:20);if(event.type==='jump'){squashAmt=.2;squashT=.2;}if(event.type==='dash'&&effectsOn())fovPunch=Math.min(10,fovPunch+6);if(effectsOn())trauma=Math.min(1,trauma+({hurt:.55,bossHit:.4,fall:.3,won:.35}[event.type]||0));if(event.type==='bark'){party?.bark();barkTime=.4;attackRing.position.set(game.player.x,game.player.y+.15,game.player.z);}if(event.type==='dead')showModal('Try again?',`<p>You keep your bones, keys, and rescued friends. Restart from the last flag.</p>`,'Return to checkpoint',()=>{game.retry();canvas.focus();});if(event.type==='secret'){game.pause();updateCampaignUI();showModal('Secret found!',`<p>${event.text}</p><p>${game.secrets.size} / 10 in your album.</p>`,'Keep exploring',()=>{game.resume();canvas.focus();},false);speak(event.text);}if(event.type==='rushWon'){confetti(game.player.x,game.player.y+1.6,game.player.z,50);setTimeout(()=>showRushResult(event),reduceMotion?200:900);}if(event.type==='rescue')confetti(game.player.x,game.player.y+1.5,game.player.z,24);if(event.type==='won'){victoryT=1.8;confetti(game.player.x,game.player.y+2,game.player.z,70);setTimeout(showVictory,reduceMotion?300:1700);}}
  const p=game.player;if(game.status==='playing'&&p.grounded&&!wasGrounded&&lastVy<-4){const s=Math.min(1,-lastVy/16);squashAmt=-.26*s;squashT=.22;dust(p.x,game.groundBelow(p),p.z,s);tone('land',.4+s*.6);if(s>.5)rumble('land',s);}wasGrounded=p.grounded;lastVy=p.vy;
  if(squashT>0){squashT=Math.max(0,squashT-dt);const k=1-squashT/(squashAmt>0?.2:.22),y=1+squashAmt*(1-easeOutBack(k));dog.scale.set(1/Math.sqrt(y),y,1/Math.sqrt(y));}else dog.scale.setScalar(1);
  dog.position.set(p.x,p.y,p.z);dog.rotation.y=p.facing;if(victoryT>0){victoryT=Math.max(0,victoryT-dt);const t=1.8-victoryT;dog.rotation.y+=reduceMotion?0:t*7;dog.position.y+=Math.abs(Math.sin(t*9))*.55;}const moving=game.status==='playing'&&(Math.hypot(p.vx,p.vz)>.2||game.secrets.has('egg-3-1'));dog.userData.legs.forEach((l,i)=>l.rotation.x=moving?Math.sin(anim*15+i*Math.PI)*.5:0);dog.userData.tail.rotation.z=Math.sin(anim*(moving?19:8))*(moving?.35:.5);dog.userData.cape.rotation.x=p.gliding?-1.3+Math.sin(anim*22)*.06:-.25+(moving?Math.sin(anim*16)*.14-.25:Math.sin(anim*3)*.06);if(p.gliding){dog.userData.legs[2].rotation.z=-1.15;dog.userData.legs[3].rotation.z=1.15;dog.rotation.x=.22;}else{dog.userData.legs[2].rotation.z=.16;dog.userData.legs[3].rotation.z=-.16;dog.rotation.x=0;}dog.visible=true;dog.userData.cape.material=game.status==='playing'&&p.invuln>0&&Math.floor(anim*8)%2===0?mat(0xffd98b):drawing?.cape&&drawingMats?drawingMats.cape:mat(capeColor);dogShadow.position.set(p.x,game.groundBelow(p)+.035,p.z);dogShadow.scale.setScalar(p.grounded?1:.7);
@@ -361,6 +487,7 @@ function frame(now){requestAnimationFrame(frame);const dt=Math.min((now-last)/10
  while(waveModels.length<game.waves.length){const m=new T.Mesh(new T.RingGeometry(.97,1,64),new T.MeshBasicMaterial({color:0xf6cb7e,transparent:true,opacity:.85,side:T.DoubleSide}));m.rotation.x=-Math.PI/2;scene.add(m);waveModels.push(m);}waveModels.forEach((m,i)=>{const w=game.waves[i];m.visible=!!w;if(w){m.position.set(w.x,1.38,w.z);m.scale.setScalar(w.r);}});
  barkTime-=dt;attackRing.visible=barkTime>0;if(barkTime>0){attackRing.scale.setScalar((1-barkTime/.4)*6);attackRing.material.opacity=barkTime/.4;}
  for(let i=particles.length-1;i>=0;i--){const q=particles[i];q.life-=dt;q.v.y-=(q.g??10)*dt;q.m.position.addScaledVector(q.v,dt);if(q.max)q.m.scale.setScalar(q.size*Math.max(.01,q.life/q.max));if(q.spin){q.m.rotation.x+=q.spin*dt;q.m.rotation.z+=q.spin*.6*dt;q.v.x*=1-dt*1.5;q.v.z*=1-dt*1.5;}if(q.life<=0){scene.remove(q.m);particles.splice(i,1);}}
+ if(party){drawFriends(dt,anim);if(now-partySendAt>80){partySendAt=now;party.sendState(p,game.level);}}
  clouds.forEach((c,i)=>c.position.x+=Math.sin(i+anim*.03)*dt*.18);updateWeather(dt,anim,menuMode?{x:0,z:0}:p);
  if(volcanoCrater&&(smokeT-=dt)<0){smokeT=.4;const m=ball(0x9a8f98,volcanoCrater.x+rnd(-.5,.5),volcanoCrater.y,volcanoCrater.z+rnd(-.5,.5),.9);m.castShadow=false;particles.push({m,v:new T.Vector3(rnd(-.4,.4),1.7,rnd(-.4,.4)),life:3.4,max:3.4,size:.9+rnd(0,.6),g:-.1});}
  if(previewMode&&$('modal').hidden){previewMode=false;camera.clearViewOffset();$('menu').style.visibility='';}

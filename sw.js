@@ -1,10 +1,27 @@
 // Offline service worker: the whole game is cached on install, so it plays with no server and no network.
-const VERSION='superdog-v5-4';
+const VERSION='superdog-v6-0';
 const ASSETS=[
  './','./index.html','./style3d.css','./favicon.svg','./manifest.webmanifest',
  './icon-192.png','./icon-512.png','./icon-maskable.png',
  './game3d.js','./adventure3d.js','./campaign3d.js','./collision3d.js','./world3d.js',
  './drawing3d.js','./audio3d.js','./wardrobe3d.js','./input3d.js','./settings3d.js',
+ './multiplayer3d.js',
+ './vendor/trystero/core/action-wire.mjs',
+ './vendor/trystero/core/actions.mjs',
+ './vendor/trystero/core/crypto.mjs',
+ './vendor/trystero/core/handshake.mjs',
+ './vendor/trystero/core/index.mjs',
+ './vendor/trystero/core/media.mjs',
+ './vendor/trystero/core/offer-pool.mjs',
+ './vendor/trystero/core/peer.mjs',
+ './vendor/trystero/core/room.mjs',
+ './vendor/trystero/core/shared-peer.mjs',
+ './vendor/trystero/core/signal-handler.mjs',
+ './vendor/trystero/core/strategy.mjs',
+ './vendor/trystero/core/topic-strategy.mjs',
+ './vendor/trystero/core/utils.mjs',
+ './vendor/trystero/nostr.mjs',
+ './vendor/trystero/secp256k1.mjs',
  './vendor/three.module.js','./vendor/three.core.js','./vendor/GLTFLoader.js','./vendor/BufferGeometryUtils.js',
  './assets/bosses/snake.glb','./assets/bosses/mushroom.glb','./assets/bosses/wolf.glb','./assets/bosses/dragon.glb','./assets/bosses/cloud.glb',
  './classic/index.html','./game.js','./engine.js','./levels.js','./style.css',

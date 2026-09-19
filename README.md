@@ -30,6 +30,16 @@ There are 320 bones, 30 stars, and 10 optional secrets across the campaign. Pres
 
 Every world after Sunny Island has two landmarks of its own (mushroom tree and fairy ring, ice palace and crystal garden, volcano and obsidian arch, castle keep and rainbow arch), its own weather, and its own bone-trail shapes.
 
+## Play with friends
+
+**👣 Play with friends** in the main menu. One player chooses **Start a game** and reads out the five-letter code; up to seven others type it into **Join**. Everyone then explores the same island and sees each other's dogs, capes, hats and barks in real time.
+
+Each player keeps their own bones, rescues and progress: this is playing side by side, not one shared save. Friends in a different world are listed but not drawn until you are in the same one.
+
+The connection is made directly between the devices (WebRTC, through the MIT-licensed [Trystero](https://github.com/dmotz/trystero) in `vendor/trystero`), so there is no server and no account. Public relays are used only to introduce the devices to each other. Strict networks (some mobile and school connections) can block direct connections, and then joining fails.
+
+Anyone who knows a code can join that island, so treat it like a password and share it only with friends. Names come from a fixed list, there is no chat, and a drawing is only sent to friends if **Show my drawing to friends** is switched on in the party screen.
+
 ## Cape glide
 
 Beating the Snake King unlocks the cape glide: hold jump while falling to float across gaps. No route requires it.
@@ -75,10 +85,12 @@ Flags set checkpoints and restore health. Progress saves per world in this brows
 - `drawing3d.js`: drawing studio, photo paper removal, and cape and flag stickers.
 - `wardrobe3d.js`: wardrobe catalogue, prices, and purchase rules.
 - `input3d.js`: gamepad mapping and rumble strengths.
+- `multiplayer3d.js`: room codes, friend state packets, and the party roster.
+- `settings3d.js`: saved settings and the camera-follow maths.
 - `audio3d.js`: per-world music and sound effects synthesized with Web Audio.
 - `game3d.js`: Three.js rendering, models, camera, sound, UI, and controls.
 - `index.html`, `style3d.css`: 3D interface and responsive layout.
-- `vendor/`: Three.js 0.180.0 and its MIT license.
+- `vendor/`: Three.js 0.180.0, its glTF loader, and Trystero, all MIT licensed.
 - `game.js`, `engine.js`, `levels.js`, `style.css`, `classic/`: classic 2D game.
 
 ## Verification

@@ -29,6 +29,14 @@ Each world has three golden keys and three friends to rescue. Collect a key, app
 
 There are 72 bones on the first island and 62 in each later world, for a total of 320. Each world has six stars and two hidden secrets: 30 stars and 10 secrets in total.
 
+## Playing with friends
+
+Choose **Play with friends** in the main menu. One of you presses **Start a game** and reads out the five letters; everyone else types them into **Join**. Up to eight of you can run around the same island together, seeing each other's dogs, hats and barks.
+
+Everyone still collects their own bones and rescues their own friends. Keep the code between friends: anyone who knows it can join. Your drawing stays private unless you switch on **Show my drawing to friends**.
+
+If joining does not work, the two devices cannot reach each other directly; this happens on some school and mobile connections. Try the same wifi.
+
 ## Guides, Bone Rush, and the wardrobe
 
 Every world has a friendly guide next to the first flag. Walk up and press E to hear a hint. Friends you rescue thank you in their own words. Turn on **Read stories and friends aloud** in How to play, or press the speaker button in a speech bubble, to hear everything spoken.
@@ -56,6 +64,7 @@ In the main menu, choose **Draw on Super Dog's cape**. Pick a crayon and draw on
 - Zoom the camera: mouse wheel.
 - Glide: hold Space while falling (after you beat the first giant).
 - Talk to a guide: E.
+- Camera behind Super Dog: C (or the ◎ button).
 - Pause: Escape or the pause button.
 
 A game controller also works: move with the left stick, A to jump (hold to glide), X to bark, B to dash, Y to talk, and Start to pause. It rumbles when something big happens.

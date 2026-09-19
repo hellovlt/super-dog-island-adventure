@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import {parseSettings,DEFAULTS,FOLLOW,ZOOM,followYaw,behindYaw,wrapAngle} from '../settings3d.js';
 test('settings fall back to sensible values and reject nonsense',()=>{
  assert.deepEqual(parseSettings(null),DEFAULTS);assert.deepEqual(parseSettings('{broken'),DEFAULTS);
- assert.deepEqual(parseSettings({follow:'auto',look:1.6,invertY:true,zoom:'far',effects:false,music:0,sfx:.5,hints:false}),
-  {follow:'auto',look:1.6,invertY:true,zoom:'far',effects:false,music:0,sfx:.5,hints:false});
+ assert.deepEqual(parseSettings({follow:'auto',look:1.6,invertY:true,zoom:'far',effects:false,music:0,sfx:.5,hints:false,shareDrawing:true}),
+  {follow:'auto',look:1.6,invertY:true,zoom:'far',effects:false,music:0,sfx:.5,hints:false,shareDrawing:true});
+ assert.equal(parseSettings({}).shareDrawing,false,'a drawing is private until the player says otherwise');
+ assert.equal(parseSettings({shareDrawing:'yes'}).shareDrawing,false);
  const wild=parseSettings({follow:'rocket',look:99,zoom:'moon',music:-5,sfx:'loud',invertY:'yes'});
  assert.equal(wild.follow,DEFAULTS.follow);assert.equal(wild.look,2);assert.equal(wild.zoom,DEFAULTS.zoom);assert.equal(wild.music,0);assert.equal(wild.sfx,DEFAULTS.sfx);assert.equal(wild.invertY,false);
  assert.ok(FOLLOW.off===0&&FOLLOW.gentle<FOLLOW.auto);assert.ok(ZOOM.near<ZOOM.medium&&ZOOM.medium<ZOOM.far);
