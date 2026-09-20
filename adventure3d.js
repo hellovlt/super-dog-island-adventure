@@ -109,6 +109,8 @@ export class Adventure3D {
   for(const key of ['invuln','dash','dashCD','barkCD','jumpBuffer'])p[key]=Math.max(0,p[key]-dt);
   p.coyote=p.grounded?this.rules.grace:Math.max(0,p.coyote-dt);
   if(input.interact)this.interact();if(input.bark)this.bark();if(this.status!=='playing')return;
+  // Walking up to a guide is enough to be greeted; nobody should have to find the E key first.
+  if(!this.rush){const guide=this.nearbyGuide();if(guide&&!this.talked?.[guide.id])this.talk(guide);}
   if(input.jump)p.jumpBuffer=.14;
   if(p.jumpBuffer>0&&(p.grounded||p.coyote>0||p.jumps<2)){
    const first=p.grounded||p.coyote>0;p.vy=first?10.8:10;p.jumps=first?1:2;p.grounded=false;p.coyote=0;p.jumpBuffer=0;this.emit('jump');

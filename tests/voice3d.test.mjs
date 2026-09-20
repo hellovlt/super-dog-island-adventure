@@ -62,3 +62,9 @@ test('recorded lines play, and silence still shows the words',()=>{
  assert.equal(pressed.speak('story-world-0',null,{force:true}),true,'a button the child pressed always plays');
  delete globalThis.Audio;
 });
+test('the recorded voice is on from the first launch',()=>{
+ const ui=readFileSync(new URL('../game3d.js',import.meta.url),'utf8');
+ assert.match(ui,/localStorage\.getItem\(READ_STORAGE\)!=='off'/,'only an explicit off keeps it quiet');
+ assert.match(ui,/catch\{return true;\}\}\)\(\),speechUntil/,'and a browser with no storage still speaks');
+ assert.match(ui,/const opening=inVillage\(\)\?null:STORIES\.find/,'an island story is told on the island, not in the village');
+});

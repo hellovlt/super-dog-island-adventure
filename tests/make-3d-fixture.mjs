@@ -3,6 +3,9 @@ const out=new URL('./.visual/3d/',import.meta.url);await mkdir(out,{recursive:tr
 let html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 html=html.replace('./style3d.css','../../../style3d.css').replace('./favicon.svg','../../../favicon.svg').replace('./classic/index.html','../../../classic/index.html');
 html=html.replace(/<script>if\('serviceWorker'[^<]*<\/script>\s*/,'');  // the QA page is not the installable app
+// A scene or level in the URL means an island: say so before the game decides where it is,
+// or it builds the village first and then swaps in an island the renderer never saw.
+html=html.replace('<script type="module"',`<script>if(/[?&](level|scene)=/.test(location.search))sessionStorage.setItem("superdog-place","island");</script>\n  <script type="module"`);
 await writeFile(new URL('index.html',out),html);
 let source=await readFile(new URL('../game3d.js',import.meta.url),'utf8');
 // Every path the page loads is relative to the game folder, so rewrite them all at once:
