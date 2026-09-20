@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {makeRoomCode,normalizeCode,isCompleteCode,formatCode,pickName,NAMES,CODE_ALPHABET,CODE_LENGTH,MAX_PLAYERS,
- packState,unpackState,packLook,unpackLook,easeRemote,shortestTurn,roomFull,waitingMessage,LONELY_AFTER,roomConfig,RELAY_REDUNDANCY,APP_ID} from '../multiplayer3d.js';
+ packState,unpackState,packLook,unpackLook,easeRemote,shortestTurn,roomFull,waitingMessage,LONELY_AFTER,roomConfig,RELAY_REDUNDANCY,APP_ID,packParty,unpackParty} from '../multiplayer3d.js';
 
 test('codes are easy to read aloud, type, and mistype',()=>{
  for(const confusing of ['O','0','I','1','L'])assert.ok(!CODE_ALPHABET.includes(confusing),`${confusing} is not in a child's code`);
@@ -69,4 +69,15 @@ test('a party is announced on enough meeting points to survive dead ones',async(
  // The set is a prefix of one fixed order, so a child on a cached older build still shares
  // meeting points with a child on the newest one. A hand-picked list would strand them.
  assert.equal(config.relayConfig.urls,undefined,'never replaces the list, only widens it');
+});
+test('a party survives the reload that changing worlds causes',()=>{
+ const packed=packParty({code:'af834',host:true});
+ assert.deepEqual(unpackParty(packed),{code:'AF834',host:true},'the code and who started it both come back');
+ assert.deepEqual(unpackParty(packParty({code:'AF834'})),{code:'AF834',host:false},'a guest stays a guest');
+ for(const junk of [null,'','not json','{"code":"XX"}','{}'])assert.equal(unpackParty(junk),null,`${junk} is not a party`);
+ assert.equal(packParty({code:'XX'}),null,'half a code is never stored');
+ const ui=readFileSync(new URL('../game3d.js',import.meta.url),'utf8');
+ assert.match(ui,/rejoin:true/,'the boot path comes back to the room');
+ assert.match(ui,/if\(joined&&!rejoin\)lonelyTimer/,'rejoining never says nobody is there');
+ assert.equal((ui.match(/forgetParty\(\)/g)||[]).length>=2,true,'leaving and starting over both clear it');
 });

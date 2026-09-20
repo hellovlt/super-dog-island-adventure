@@ -1,11 +1,11 @@
 // Offline service worker: the whole game is cached on install, so it plays with no server and no network.
-const VERSION='superdog-v7-0';
+const VERSION='superdog-v8-0';
 const ASSETS=[
  './','./index.html','./style3d.css','./favicon.svg','./manifest.webmanifest',
  './icon-192.png','./icon-512.png','./icon-maskable.png',
  './game3d.js','./adventure3d.js','./campaign3d.js','./collision3d.js','./world3d.js',
  './drawing3d.js','./audio3d.js','./wardrobe3d.js','./input3d.js','./settings3d.js',
- './multiplayer3d.js','./stories3d.js','./voice3d.js',
+ './multiplayer3d.js','./stories3d.js','./voice3d.js','./village3d.js',
  './vendor/trystero/core/action-wire.mjs',
  './vendor/trystero/core/actions.mjs',
  './vendor/trystero/core/crypto.mjs',

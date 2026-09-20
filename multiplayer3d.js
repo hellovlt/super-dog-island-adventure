@@ -72,6 +72,18 @@ export function waitingMessage({joined=false,friends=0,waitedMs=0}={}){
 export const RELAY_REDUNDANCY=9;
 export const roomConfig=()=>({appId:APP_ID,relayConfig:{redundancy:RELAY_REDUNDANCY}});
 
+// Travelling between worlds reloads the page, which would drop every peer. The code and
+// whether this player started the party ride across the reload in sessionStorage.
+export function packParty({code,host=false}={}){
+ const clean=normalizeCode(code);
+ return isCompleteCode(clean)?JSON.stringify({code:clean,host:!!host}):null;
+}
+export function unpackParty(raw){
+ if(typeof raw!=='string'||!raw)return null;
+ try{const data=JSON.parse(raw);const code=normalizeCode(data?.code);
+  return isCompleteCode(code)?{code,host:!!data.host}:null;}catch{return null;}
+}
+
 export function joinParty(code,{look,onRoster,onBark,onJoin,onLeave,onError}={}){
  const room=joinRoom(roomConfig(),`sd-${normalizeCode(code)}`);
  const state=room.makeAction('pos'),looks=room.makeAction('look'),barks=room.makeAction('bark');

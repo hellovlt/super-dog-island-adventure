@@ -1,5 +1,6 @@
 import * as T from './vendor/three.module.js';
 import {Adventure3D,DIFFICULTIES,LEVELS,createWorld,hasProgress,CRYSTALS} from './adventure3d.js';
+import {createVillage,gateAt,everyoneReady,GATES,VILLAGE_SPAWN} from './village3d.js';
 import {safeCamera} from './collision3d.js';
 import {DRAWING_STORAGE,parseDrawing,stickerCanvas,studioMarkup,mountStudio} from './drawing3d.js';
 import {SOUND_STORAGE,playSfx,createMusic} from './audio3d.js';
@@ -7,13 +8,27 @@ import {SLOTS,SLOT_NAMES,WARDROBE,wornItem,owns} from './wardrobe3d.js';
 import {readPad,RUMBLE} from './input3d.js';
 import {SETTINGS_STORAGE,parseSettings,FOLLOW,ZOOM,followYaw} from './settings3d.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
-import {joinParty,makeRoomCode,normalizeCode,isCompleteCode,formatCode,pickName,easeRemote,waitingMessage,LONELY_AFTER,NAMES,MAX_PLAYERS,CODE_LENGTH} from './multiplayer3d.js';
+import {joinParty,makeRoomCode,normalizeCode,isCompleteCode,formatCode,pickName,easeRemote,waitingMessage,packParty,unpackParty,LONELY_AFTER,NAMES,MAX_PLAYERS,CODE_LENGTH} from './multiplayer3d.js';
 import {STORIES,storyText,isStoryOpen,storiesForLevel,STORY_COUNT} from './stories3d.js';
 import {createVoice,parseManifest,captionForSound,lineId,VOICE_DIR} from './voice3d.js';
 const $=id=>document.getElementById(id),canvas=$('world');
 const STORAGE='superdog-island-3d-v4',LEGACY_STORAGE='superdog-island-3d-v3';
 let save=null;try{save=JSON.parse(localStorage.getItem(STORAGE)||localStorage.getItem(LEGACY_STORAGE)||'null');}catch{}
 const game=new Adventure3D(save);
+// The village is where an adventure starts. An island is somewhere you go from there, and
+// changeLevel says so on its way through the reload.
+const PLACE_STORAGE='superdog-place';
+let place=(()=>{try{const want=sessionStorage.getItem(PLACE_STORAGE);sessionStorage.removeItem(PLACE_STORAGE);return want==='island'?'island':'village';}catch{return 'village';}})();
+// The campaign save exactly as it was loaded. While the child is in the village this is
+// what gets written back, so a village can never rewrite an island's progress.
+const islandSave=game.snapshot();
+const inVillage=()=>place==='village';
+if(inVillage()){
+ game.world=createVillage();game.solids=game.world.solidsFor(new Set());
+ Object.assign(game.player,{...VILLAGE_SPAWN,vx:0,vy:0,vz:0,hp:game.maxHP});game.checkpoint='home';
+ // The simulation built the island's snakes before the village replaced it. Nothing bites here.
+ game.enemies.length=0;game.boss.state='sleep';game.boss.hp=0;
+}
 const {PLATFORMS,FRIENDS,KEYS,STARS,BONES,CHECKPOINTS,SPAWN,TREES,PROPS,ROCKS}=game.world;
 const theme=game.world.meta;
 const scene=new T.Scene();scene.background=new T.Color(theme.sky);scene.fog=new T.Fog(theme.sky,75,180);
@@ -82,7 +97,7 @@ for(const s of PROPS){
 }
 const lighthouse=group(-39,0,-35);mesh('cone',0xc77f62,0,11.7,0,2.5,1.5,2.5,lighthouse);
 const flags=[];for(const c of CHECKPOINTS){const g=group(c.x-2,c.y,c.z);const f=cube(0xf5c563,.6,2.7,0,1.2,.7,.035,g);flags.push({mesh:f,id:c.id});ball(0xffedb7,0,3.25,0,.14,g);}
-const gate=group(0,0,-44.5);for(const x of [-3.4,3.4])ball(0xd9dbb0,x,8.6,0,.75,gate);const gateBars=group(0,0,-44.5);for(let x=-2.8;x<=2.8;x+=.55)cylinder(0xc69a4e,x,4,0,.075,8,gateBars);cube(0xd5ad62,0,7.9,0,6,.18,.18,gateBars);
+const gate=group(0,0,-44.5);gate.visible=!inVillage();for(const x of [-3.4,3.4])ball(0xd9dbb0,x,8.6,0,.75,gate);const gateBars=group(0,0,-44.5);for(let x=-2.8;x<=2.8;x+=.55)cylinder(0xc69a4e,x,4,0,.075,8,gateBars);cube(0xd5ad62,0,7.9,0,6,.18,.18,gateBars);
 // Crown pillars and serpent banners frame the final arena.
 for(const x of [-16,16])for(const z of [-58,-82])ball(0xe5b75c,x,6.8,z,.65);
 for(let i=0;i<10;i++){const a=i/10*Math.PI*2;cube(0xbfc293,Math.sin(a)*14,1.24,-71+Math.cos(a)*10,1.4,.05,1.4).rotation.y=a;}
@@ -283,7 +298,11 @@ let yaw=0,pitch=.35,cameraDistance=11.5,drag=null,stick={x:0,z:0},pressed=new Se
 const cameraTarget=new T.Vector3(),desiredCamera=new T.Vector3(),camBase=new T.Vector3();
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches,BASE_FOV=52;let trauma=0,fovPunch=0,squashT=0,squashAmt=0,wasGrounded=true,lastVy=0;
 const shakeNoise=(t,seed)=>{const x=Math.sin(t*12.9898+seed*78.233)*43758.5453;return (x-Math.floor(x))*2-1;};
-function storeSave(){if(resettingSave)return;try{localStorage.setItem(STORAGE,JSON.stringify(game.snapshot()));}catch{}}
+function storeSave(){if(resettingSave)return;
+ try{const snap=game.snapshot();
+  // Nothing done in the village may touch what was earned on the islands.
+  const safe=inVillage()?{...snap,level:islandSave.level,progress:islandSave.progress,challenges:islandSave.challenges}:snap;
+  localStorage.setItem(STORAGE,JSON.stringify(safe));}catch{}}
 function updateDifficulty(){for(const button of document.querySelectorAll('[data-difficulty]'))button.setAttribute('aria-pressed',String(button.dataset.difficulty===game.difficulty));$('difficultyDescription').textContent=game.rules.description;$('difficultyBadge').textContent=game.rules.name;}
 for(const button of document.querySelectorAll('[data-difficulty]'))button.onclick=()=>{if(game.setDifficulty(button.dataset.difficulty)){updateDifficulty();storeSave();}};
 updateDifficulty();
@@ -291,11 +310,13 @@ function updateCampaignUI(){
  $('levelLabel').textContent=`${game.level+1}/5 · ${theme.name}`;$('bossName').textContent=theme.boss;
  $('levelDescription').textContent=`${game.level+1}. ${theme.name} — ${theme.subtitle}`;
  $('album').textContent=`📖 Story book · ${openStoryCount()} / ${STORY_COUNT}`;$('wardrobe').textContent=`◆ Wardrobe · ${game.bonesAvailable} bones to spend`;
- $('nextLevel').hidden=game.boss.hp>0||game.level===4;
+ $('nextLevel').hidden=inVillage()||game.boss.hp>0||game.level===4;
  $('levelPicker').innerHTML=LEVELS.map((l,i)=>`<button data-level="${i}" aria-label="${i+1}. ${l.name}${i>=game.unlocked?' — locked':''}" aria-pressed="${i===game.level}" ${i>=game.unlocked?'disabled':''}><span>${i>=game.unlocked?'🔒':i<game.unlocked-1?'✓':i+1}</span><small>${l.name}</small></button>`).join('');
- for(const b of $('levelPicker').children)b.onclick=()=>{if(Number(b.dataset.level)===game.level)return;changeLevel(Number(b.dataset.level),false);};
+ for(const b of $('levelPicker').children)b.onclick=()=>{if(Number(b.dataset.level)===game.level&&!inVillage())return;changeLevel(Number(b.dataset.level),false);};
 }
-function changeLevel(level,autostart=true){if(!game.selectLevel(level))return;storeSave();if(autostart)sessionStorage.setItem('superdog-autostart','1');location.reload();}
+function changeLevel(level,autostart=true){if(!game.selectLevel(level))return;storeSave();try{sessionStorage.setItem(PLACE_STORAGE,'island');}catch{}if(autostart)sessionStorage.setItem('superdog-autostart','1');location.reload();}
+// The way home. The village is the default place, so it only has to ask for the reload.
+function goToVillage(){storeSave();try{sessionStorage.setItem('superdog-autostart','1');}catch{}location.reload();}
 function showVictory(){updateCampaignUI();if(game.level===0)voice.speak(lineId.ui('glideUnlocked'));showModal(game.level===4?'Five worlds saved!':'Giant defeated!',`<p><b>${theme.boss}</b> gives up. All three friends are free!</p><div class="results"><span><b class="bone-icon">◆</b> ${game.boneCount}<small>/ ${BONES.length} bones</small></span><span><b class="star">★</b> ${game.starCount}<small>/ 6 stars</small></span><span><b class="key">✧</b> ${game.secrets.size}<small>/ 10 secrets</small></span></div>${game.level===0?'<p><b>New power: cape glide!</b> Hold jump while falling to float across gaps.</p>':''}<p>${game.level<4?'New world unlocked: '+LEVELS[game.level+1].name+'. Revisit completed worlds from the main menu.':'Thanks for the adventure! Revisit any world to complete your secret album.'}</p>`,game.level<4?'Next world →':'Keep exploring',()=>{if(game.level<4)changeLevel(game.level+1);else{game.start();canvas.focus();}});}
  $('nextLevel').onclick=()=>changeLevel(game.level+1);
  $('album').onclick=openStoryBook;
@@ -311,7 +332,10 @@ function renderWardrobe(){$('modalBody').innerHTML=wardrobeMarkup();for(const t 
 function openWardrobe(){showModal('Dog house wardrobe','','Done',()=>{},false);voice.speak(lineId.ui('wardrobe'));$('modal').classList.add('wardrobe');previewMode=true;$('menu').style.visibility='hidden';renderWardrobe();}
 $('wardrobe').onclick=openWardrobe;
 // Play with friends: a five-letter code, up to eight dogs on one island.
-let party=null,partySendAt=0,partyJoined=false,partyOpenedAt=0,lonelyTimer=0;const greeted=new Set();
+let party=null,partySendAt=0,partyJoined=false,partyHost=false,partyOpenedAt=0,lonelyTimer=0;const greeted=new Set();
+const PARTY_STORAGE='superdog-party';
+const rememberParty=()=>{try{const packed=packParty({code:party?.code,host:partyHost});if(packed)sessionStorage.setItem(PARTY_STORAGE,packed);}catch{}};
+const forgetParty=()=>{try{sessionStorage.removeItem(PARTY_STORAGE);}catch{}};
 const NAME_STORAGE='superdog-name';
 let myName=(()=>{try{return localStorage.getItem(NAME_STORAGE)||pickName();}catch{return pickName();}})();
 const myLook=()=>({name:myName,cape:wornItem(game.wardrobe,'cape',game.secrets).color,hat:wornItem(game.wardrobe,'hat',game.secrets).id,
@@ -321,12 +345,13 @@ function updatePartyHud(){
  $('partyHud').hidden=!party;$('partyCount').textContent=count?`${count} friend${count>1?'s':''} · ${party.code}`:`Waiting · ${party?.code??''}`;
  if(!$('modal').hidden&&$('modal').classList.contains('party'))renderParty();
 }
-function startParty(code,{joined=false}={}){
+function startParty(code,{joined=false,rejoin=false,host=false}={}){
  if(party)party.leave();
- const joinedAt=Date.now();partyJoined=joined;partyOpenedAt=joinedAt;
+ const joinedAt=Date.now();partyJoined=joined;partyHost=rejoin?host:!joined;partyOpenedAt=joinedAt;
  // Somebody who typed a code and is still alone after a while has probably typed it wrong.
+ // Coming back from a world change is a third case: the friends are reloading too.
  clearTimeout(lonelyTimer);
- if(joined)lonelyTimer=setTimeout(()=>{if(party&&!party.roster().length){toast('Nobody is on that island. Check the code with your friend.');tone('hurt');renderParty();}},LONELY_AFTER);
+ if(joined&&!rejoin)lonelyTimer=setTimeout(()=>{if(party&&!party.roster().length){toast('Nobody is on that island. Check the code with your friend.');tone('hurt');renderParty();}},LONELY_AFTER);
  try{
   party=joinParty(code,{look:myLook,
    onRoster:roster=>{
@@ -343,9 +368,10 @@ function startParty(code,{joined=false}={}){
    onError:()=>toast('Could not reach your friends. Check the internet connection.')});
  }catch(error){toast('Could not start a game with friends. Check the internet connection.');return;}
  try{localStorage.setItem(NAME_STORAGE,myName);}catch{}
+ rememberParty();
  updatePartyHud();renderParty();
 }
-function leaveParty(){if(!party)return;clearTimeout(lonelyTimer);party.leave();party=null;partyJoined=false;greeted.clear();for(const id of [...friendViews.keys()])dropFriend(id);updatePartyHud();renderParty();}
+function leaveParty(){if(!party)return;clearTimeout(lonelyTimer);forgetParty();party.leave();party=null;partyJoined=false;partyHost=false;greeted.clear();for(const id of [...friendViews.keys()])dropFriend(id);updatePartyHud();renderParty();}
 function partyMarkup(){
  if(!party)return `<p>Play on the same island with up to ${MAX_PLAYERS} friends. One of you starts a game and reads out the code; the others type it in.</p>
  <div class="party-name"><span class="set-label">You are</span><select id="partyName">${NAMES.map(n=>`<option${n===myName?' selected':''}>${n}</option>`).join('')}</select></div>
@@ -484,9 +510,9 @@ function recenterCamera(){recenterT=.55;}
 function resetInput(){pressed.clear();heldTouch?.clear();actions={};stick={x:0,z:0};drag=null;joystickPointer=null;$('joystick').firstElementChild.style.transform='';}
 function launch(){menuMode=false;const opening=STORIES.find(st=>st.kind==='world'&&st.level===game.level);if(opening&&readAloud)setTimeout(()=>speakStory(opening),900);$('menu').hidden=true;$('hud').hidden=false;$('pause').hidden=false;$('touch').hidden=!matchMedia('(pointer:coarse), (max-width:760px)').matches;game.start();ui();$('modal').hidden=true;resetInput();yaw=0;pitch=.35;camera.position.set(game.player.x,game.player.y+7,game.player.z+11);camBase.copy(camera.position);canvas.focus();storeSave();toast('WASD — move · Space twice to double jump · Drag the mouse to orbit');}
 function showModal(title,body,label,callback,secondary=true){resetInput();$('modal').classList.remove('wardrobe','settings','party');$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modalPrimary').textContent=label;modalAction=callback;$('modalSecondary').hidden=!secondary;$('modal').hidden=false;$('modalPrimary').focus({preventScroll:true});$('modal').firstElementChild.scrollTop=0;}
-function pause(){if(game.status!=='playing')return;game.pause();storeSave();showModal('Taking a break',`<p>Your discoveries and rescued friends are saved. The island will be here when you return!</p><p>Bones: <b>${game.boneCount}/${BONES.length}</b> · Stars: <b>${game.starCount}/6</b></p><p>Difficulty: <b>${game.rules.name}</b>. Change it in the main menu. Your discoveries stay saved; hearts and the current battle reset.</p>`,'Continue adventure',()=>{game.resume();canvas.focus();});$('modalBody').insertAdjacentHTML('beforeend','<button type="button" class="text-button" data-open-settings>⚙ Settings</button>');$('modalBody').querySelector('[data-open-settings]').onclick=openSettings;}
+function pause(){if(game.status!=='playing')return;game.pause();storeSave();showModal('Taking a break',`<p>Your discoveries and rescued friends are saved. ${inVillage()?'Your village':'The island'} will be here when you return!</p><p>Bones: <b>${game.boneCount}/${BONES.length}</b> · Stars: <b>${game.starCount}/6</b></p><p>Difficulty: <b>${game.rules.name}</b>. Change it in the main menu. Your discoveries stay saved; hearts and the current battle reset.</p>`,'Continue adventure',()=>{game.resume();canvas.focus();});$('modalBody').insertAdjacentHTML('beforeend',`${inVillage()?'':'<button type="button" class="text-button" data-go-village>🏡 Back to the village</button>'}<button type="button" class="text-button" data-open-settings>⚙ Settings</button>`);$('modalBody').querySelector('[data-open-settings]').onclick=openSettings;const home=$('modalBody').querySelector('[data-go-village]');if(home)home.onclick=goToVillage;}
 $('play').onclick=launch;if((save?.version===3||save?.version===4)&&hasProgress(save)){$('play').firstChild.textContent='Continue adventure ';$('newGame').hidden=false;}
-$('newGame').onclick=()=>showModal('Start over?','<p>This will reset discoveries and rescued friends in all five worlds. Your wardrobe, your drawing, and your Bone Rush best times stay.</p>','Yes, start a new adventure',()=>{resettingSave=true;try{localStorage.setItem(STORAGE,JSON.stringify(game.freshStart()));}catch{}location.reload();});
+$('newGame').onclick=()=>showModal('Start over?','<p>This will reset discoveries and rescued friends in all five worlds. Your wardrobe, your drawing, and your Bone Rush best times stay.</p>','Yes, start a new adventure',()=>{resettingSave=true;forgetParty();try{localStorage.setItem(STORAGE,JSON.stringify(game.freshStart()));}catch{}location.reload();});
 $('pause').onclick=pause;$('modalPrimary').onclick=()=>{$('modal').hidden=true;modalAction?.();ui();};
 $('modalSecondary').onclick=()=>{updateCampaignUI();$('modal').hidden=true;game.pause();menuMode=true;$('menu').hidden=false;$('hud').hidden=true;$('touch').hidden=true;$('pause').hidden=true;$('play').firstChild.textContent='Continue adventure ';$('newGame').hidden=false;};
 $('help').onclick=()=>{helpWasPlaying=game.status==='playing';game.pause();showModal('How to be a super dog',`<p>Explore each world, collect three keys, and rescue your friends. The bridge to the giant boss will open.</p><dl class="help-list"><dt>WASD / arrow keys</dt><dd>Move relative to the camera</dd><dt>Space × 2</dt><dd>Jump, then jump again in midair</dd><dt>X / BARK button</dt><dd>Super bark to chase away snakes</dd><dt>Hold Space</dt><dd>Glide with your cape (after the first giant)</dd><dt>Shift</dt><dd>Dash forward, even in midair</dd><dt>E</dt><dd>Talk, open a cage with one key, or discover a secret</dd><dt>Mouse / touch</dt><dd>Drag across the world to rotate the camera</dd><dt>Q / R · mouse wheel</dt><dd>Rotate · camera distance</dd><dt>C</dt><dd>Put the camera behind Super Dog</dd><dt>Esc</dt><dd>Pause</dd><dt>Controller</dt><dd>Stick move · A jump, hold to glide · X bark · B dash · Y talk · Start pause</dd></dl><p>Golden flags are checkpoints. Falling into the water returns you to a flag. Progress is saved in this browser.</p><button type="button" class="read-toggle" data-read-aloud aria-pressed="false">Read stories and friends aloud</button>`,'Got it!',()=>{if(helpWasPlaying)game.resume();canvas.focus();},false);$('modalBody').querySelector('[data-read-aloud]').onclick=toggleReadAloud;updateReadAloud();};
@@ -504,15 +530,46 @@ let joystickPointer=null;const joy=$('joystick');function moveStick(e){if(e.poin
 joy.addEventListener('pointerdown',e=>{joystickPointer=e.pointerId;joy.setPointerCapture(e.pointerId);moveStick(e);});joy.addEventListener('pointermove',moveStick);for(const name of ['pointerup','pointercancel','lostpointercapture'])joy.addEventListener(name,()=>{joystickPointer=null;stick={x:0,z:0};joy.firstElementChild.style.transform='';});
 const heldTouch=new Set();for(const button of document.querySelectorAll('[data-action]')){button.addEventListener('pointerdown',e=>{e.preventDefault();if(button.dataset.action==='recenter'){recenterCamera();return;}heldTouch.add(button.dataset.action);if(game.status==='playing')actions[button.dataset.action]=true;});for(const name of ['pointerup','pointercancel','pointerleave'])button.addEventListener(name,()=>heldTouch.delete(button.dataset.action));}
 function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();if(!menuMode)$('touch').hidden=!matchMedia('(pointer:coarse), (max-width:760px)').matches;}window.addEventListener('resize',resize);resize();
-const map=$('minimap').getContext('2d'),css=c=>'#'+c.toString(16).padStart(6,'0');function drawMap(){const px=x=>90+x*1.34,pz=z=>126+z*1.04;map.clearRect(0,0,180,180);map.fillStyle=css(theme.sea);map.fillRect(0,0,180,180);map.fillStyle=css(theme.ground);map.fillRect(px(-48),pz(-46),96*1.34,94*1.04);map.fillStyle=css(theme.stone);map.fillRect(px(-19),pz(-86),38*1.34,32*1.04);map.fillStyle='#c8a66e';map.fillRect(px(-2.6),pz(-55),5.2*1.34,12*1.04);map.globalAlpha=.55;for(const p of PLATFORMS){if(p.kind==='island'||p.kind==='arena'||p.kind==='bridge')continue;map.fillStyle=p.kind==='house'?'#d79677':p.kind==='mushroom'?css(theme.accent):'#fff8e4';map.fillRect(px(p.x-p.w/2),pz(p.z-p.d/2),Math.max(2,p.w*1.34),Math.max(2,p.d*1.04));}map.globalAlpha=1;for(const f of FRIENDS){map.beginPath();map.fillStyle=game.rescued.has(f.id)?'#f9f4ce':'#9868b4';map.arc(px(f.x),pz(f.z),3.7,0,7);map.fill();}for(const k of KEYS)if(!game.collected.has(k.id)){map.fillStyle='#ffeb78';map.fillRect(px(k.x)-2,pz(k.z)-2,4,4);}const p=game.player;map.save();map.translate(px(p.x),pz(p.z));map.rotate(-p.facing);map.fillStyle='#fff9e7';map.strokeStyle='#385845';map.lineWidth=1.5;map.beginPath();map.moveTo(0,5);map.lineTo(-4,-4);map.lineTo(4,-4);map.closePath();map.fill();map.stroke();map.restore();map.fillStyle='#406656';map.font='bold 9px sans-serif';map.fillText('N',86,12);}
+const map=$('minimap').getContext('2d'),css=c=>'#'+c.toString(16).padStart(6,'0');function drawMap(){if(inVillage())return drawVillageMap();const px=x=>90+x*1.34,pz=z=>126+z*1.04;map.clearRect(0,0,180,180);map.fillStyle=css(theme.sea);map.fillRect(0,0,180,180);map.fillStyle=css(theme.ground);map.fillRect(px(-48),pz(-46),96*1.34,94*1.04);map.fillStyle=css(theme.stone);map.fillRect(px(-19),pz(-86),38*1.34,32*1.04);map.fillStyle='#c8a66e';map.fillRect(px(-2.6),pz(-55),5.2*1.34,12*1.04);map.globalAlpha=.55;for(const p of PLATFORMS){if(p.kind==='island'||p.kind==='arena'||p.kind==='bridge')continue;map.fillStyle=p.kind==='house'?'#d79677':p.kind==='mushroom'?css(theme.accent):'#fff8e4';map.fillRect(px(p.x-p.w/2),pz(p.z-p.d/2),Math.max(2,p.w*1.34),Math.max(2,p.d*1.04));}map.globalAlpha=1;for(const f of FRIENDS){map.beginPath();map.fillStyle=game.rescued.has(f.id)?'#f9f4ce':'#9868b4';map.arc(px(f.x),pz(f.z),3.7,0,7);map.fill();}for(const k of KEYS)if(!game.collected.has(k.id)){map.fillStyle='#ffeb78';map.fillRect(px(k.x)-2,pz(k.z)-2,4,4);}const p=game.player;map.save();map.translate(px(p.x),pz(p.z));map.rotate(-p.facing);map.fillStyle='#fff9e7';map.strokeStyle='#385845';map.lineWidth=1.5;map.beginPath();map.moveTo(0,5);map.lineTo(-4,-4);map.lineTo(4,-4);map.closePath();map.fill();map.stroke();map.restore();map.fillStyle='#406656';map.font='bold 9px sans-serif';map.fillText('N',86,12);}
 $('boneTotal').textContent=`/ ${BONES.length}`;$('friendBadges').innerHTML=FRIENDS.map(f=>`<span data-friend="${f.id}">${f.name}</span>`).join('');
-let uiTime=0;function ui(){applyLook();const p=game.player;$('hearts').textContent='♥ '.repeat(Math.max(0,p.hp))+'♡ '.repeat(game.maxHP-Math.max(0,p.hp));$('hearts').setAttribute('aria-label',`${p.hp} of ${game.maxHP} hearts`);$('bones').textContent=game.boneCount;$('stars').textContent=game.starCount;$('keys').textContent=game.keyCount;$('objective').textContent=game.objective;for(const badge of $('friendBadges').children)badge.classList.toggle('saved',game.rescued.has(badge.dataset.friend));$('barkCharge').style.width=`${Math.max(0,1-p.barkCD/game.rules.barkCooldown)*100}%`;$('dashCharge').style.width=`${Math.max(0,1-p.dashCD/game.rules.dashCooldown)*100}%`;$('zone').textContent=game.level?theme.name:p.z<-54?'Royal arena':p.z<-20&&p.x>5?'Cloud steps':p.x>18?'Mushroom forest':p.x<-15?'Friend village':'Sunny shore';const secret=game.nearbySecret();const f=game.nearbyFriend();const stone=!f&&!secret&&game.nearbyRushStone(),guide=!f&&!secret&&!stone&&game.nearbyGuide();$('interactPrompt').hidden=!f&&!secret&&!guide&&!stone;if(guide)$('interactPrompt').lastElementChild.textContent=`Talk to ${guide.name}`;if(stone){const best=game.challenges[game.level]?.best;$('interactPrompt').lastElementChild.textContent=`Start Bone Rush${best?` · best ${best}s`:''}`;}$('rushHud').hidden=!game.rush;if(game.rush){const left=Math.ceil(game.rush.left);$('rushTime').textContent=`${left}s`;$('rushHud').classList.toggle('hurry',left<=10);$('rushCount').textContent=`${game.rush.got.size} / ${game.world.RUSH.bones.length}`;}for(const m of trophyParts)m.material=mat(game.challenges[game.level]?0xf3c65b:0xcfd6d8);if(secret)$('interactPrompt').lastElementChild.textContent='Discover secret';if(f)$('interactPrompt').lastElementChild.textContent=game.keyCount>0?`Rescue: ${f.name}`:'You need a golden key';$('bossHud').hidden=game.boss.state==='sleep'||game.boss.hp<=0;$('bossHealth').style.width=`${game.boss.hp/game.rules.bossHP*100}%`;$('bossState').textContent=game.boss.state==='rest'?'BARK NOW!':game.boss.state==='windup'?'CHARGING UP':'DASH SIDEWAYS!';drawMap();}
+// The village HUD says something different from an island's: nothing to collect, nowhere
+// to fall, five gates to choose from.
+let gateHold=0,gateWas=null;
+function villageUI(){
+ if(!inVillage())return;
+ const gate=gateAt(game.player.x,game.player.z),open=gate&&gate.level<game.unlocked;
+ $('objective').textContent='Your village. Walk into a gate to set off for an island.';
+ $('zone').textContent='Your village';
+ $('friendBadges').hidden=true;$('bossHud').hidden=true;
+ $('interactPrompt').hidden=!gate;
+ if(gate)$('interactPrompt').lastElementChild.textContent=open?`Setting off for ${LEVELS[gate.level].name}…`:`${LEVELS[gate.level].name} is not open yet`;
+}
+// Standing in a gate is the whole action: no button to find, no menu to read.
+function updateGates(dt){
+ if(!inVillage()||game.status!=='playing')return;
+ const gate=gateAt(game.player.x,game.player.z);
+ if(!gate||gate.level>=game.unlocked){gateHold=0;gateWas=null;return;}
+ if(gate!==gateWas){gateWas=gate;gateHold=0;tone('jump',.7);}
+ gateHold+=dt;
+ if(gateHold>=1.5){gateHold=0;gateWas=null;tone('key');changeLevel(gate.level);}
+}
+function drawVillageMap(){
+ const px=x=>90+x*2.1,pz=z=>90+z*2.1;
+ map.clearRect(0,0,180,180);map.fillStyle=css(theme.sea);map.fillRect(0,0,180,180);
+ map.fillStyle=css(theme.ground);map.beginPath();map.arc(px(0),pz(0),34*2.1,0,7);map.fill();
+ for(const gate of GATES){map.beginPath();map.fillStyle=gate.level<game.unlocked?'#ffeb78':'#8d8f86';map.arc(px(gate.x),pz(gate.z),4,0,7);map.fill();}
+ const p=game.player;map.save();map.translate(px(p.x),pz(p.z));map.rotate(-p.facing);
+ map.fillStyle='#fff9e7';map.strokeStyle='#385845';map.lineWidth=1.5;map.beginPath();map.moveTo(0,5);map.lineTo(-4,-4);map.lineTo(4,-4);map.closePath();map.fill();map.stroke();map.restore();
+ map.fillStyle='#406656';map.font='bold 9px sans-serif';map.fillText('N',86,12);
+}
+let uiTime=0;function ui(){applyLook();const p=game.player;$('hearts').textContent='♥ '.repeat(Math.max(0,p.hp))+'♡ '.repeat(game.maxHP-Math.max(0,p.hp));$('hearts').setAttribute('aria-label',`${p.hp} of ${game.maxHP} hearts`);$('bones').textContent=game.boneCount;$('stars').textContent=game.starCount;$('keys').textContent=game.keyCount;$('objective').textContent=game.objective;for(const badge of $('friendBadges').children)badge.classList.toggle('saved',game.rescued.has(badge.dataset.friend));$('barkCharge').style.width=`${Math.max(0,1-p.barkCD/game.rules.barkCooldown)*100}%`;$('dashCharge').style.width=`${Math.max(0,1-p.dashCD/game.rules.dashCooldown)*100}%`;$('zone').textContent=game.level?theme.name:p.z<-54?'Royal arena':p.z<-20&&p.x>5?'Cloud steps':p.x>18?'Mushroom forest':p.x<-15?'Friend village':'Sunny shore';const secret=game.nearbySecret();const f=game.nearbyFriend();const stone=!f&&!secret&&game.nearbyRushStone(),guide=!f&&!secret&&!stone&&game.nearbyGuide();$('interactPrompt').hidden=!f&&!secret&&!guide&&!stone;if(guide)$('interactPrompt').lastElementChild.textContent=`Talk to ${guide.name}`;if(stone){const best=game.challenges[game.level]?.best;$('interactPrompt').lastElementChild.textContent=`Start Bone Rush${best?` · best ${best}s`:''}`;}$('rushHud').hidden=!game.rush;if(game.rush){const left=Math.ceil(game.rush.left);$('rushTime').textContent=`${left}s`;$('rushHud').classList.toggle('hurry',left<=10);$('rushCount').textContent=`${game.rush.got.size} / ${game.world.RUSH.bones.length}`;}for(const m of trophyParts)m.material=mat(game.challenges[game.level]?0xf3c65b:0xcfd6d8);if(secret)$('interactPrompt').lastElementChild.textContent='Discover secret';if(f)$('interactPrompt').lastElementChild.textContent=game.keyCount>0?`Rescue: ${f.name}`:'You need a golden key';$('bossHud').hidden=game.boss.state==='sleep'||game.boss.hp<=0;$('bossHealth').style.width=`${game.boss.hp/game.rules.bossHP*100}%`;$('bossState').textContent=game.boss.state==='rest'?'BARK NOW!':game.boss.state==='windup'?'CHARGING UP':'DASH SIDEWAYS!';villageUI();drawMap();}
 function frame(now){requestAnimationFrame(frame);const dt=Math.min((now-last)/1000,.1);last=now;const anim=now/1000;pollPad(dt);
  if(game.status==='playing'){
   yaw+=((pressed.has('KeyQ')?1:0)-(pressed.has('KeyR')?1:0))*dt*1.8;
   const x=(pressed.has('KeyD')||pressed.has('ArrowRight')?1:0)-(pressed.has('KeyA')||pressed.has('ArrowLeft')?1:0)+stick.x+padMove.x,z=(pressed.has('KeyS')||pressed.has('ArrowDown')?1:0)-(pressed.has('KeyW')||pressed.has('ArrowUp')?1:0)+stick.z+padMove.z;
   // Fixed maximum physics step prevents tunnelling on slower devices.
   game.tick(dt,{x,z,yaw,...actions,glide:pressed.has('Space')||heldTouch.has('jump')||padMove.glide});actions={};
+  updateGates(dt);
  }
  const frameEvents=game.events.splice(0);if(frameEvents.length)uiTime=1;
  // Recorded guidance for the moments that matter; silent unless reading aloud is on.
@@ -539,7 +596,7 @@ if(event.text&&event.type!=='talk')toast(event.text);if(event.type==='talk')show
  if(!$('speech').hidden&&now>speechUntil)$('speech').hidden=true;
  if(!$('caption').hidden&&now>captionUntil)$('caption').hidden=true;
  for(const e of secretModels){e.mesh.visible=!game.secrets.has(e.data.id);e.mesh.position.y=e.data.y+1+Math.sin(anim*2)*.18;e.mesh.rotation.y=anim*.5;}
- gateBars.visible=game.rescued.size<3;for(const f of flags){const on=f.id===game.checkpoint;f.mesh.material=drawing?.flags&&drawingMats?drawingMats[on?'flagOn':'flag']:mat(on?0x85c37a:0xf5c563);f.mesh.rotation.y=Math.sin(anim*3)*.15;}
+ gateBars.visible=!inVillage()&&game.rescued.size<3;for(const f of flags){const on=f.id===game.checkpoint;f.mesh.material=drawing?.flags&&drawingMats?drawingMats[on?'flagOn':'flag']:mat(on?0x85c37a:0xf5c563);f.mesh.rotation.y=Math.sin(anim*3)*.15;}
  for(const e of game.enemies){const m=enemyModels.get(e.id);m.visible=!game.defeated.has(e.id);m.position.set(e.x,0,e.z);m.rotation.y=Math.atan2(p.x-e.x,p.z-e.z);m.userData.segments.forEach((s,i)=>s.position.x=Math.sin(anim*5+i)*.14);m.scale.setScalar(e.hit>0?1.2:1);}
  const b=game.boss;bossView.visible=b.hp>0;bossView.position.set(b.x,b.y,b.z);bossView.rotation.y=b.state==='charge'?Math.atan2(b.dx,b.dz):Math.atan2(p.x-b.x,p.z-b.z);bossView.scale.setScalar(bossView.userData.baseScale*(b.hit>0?1.04:1));bossView.userData.head.rotation.z=Math.sin(anim*2)*.035;dangerRing.visible=b.state==='windup';dangerRing.position.x=b.x;dangerRing.position.z=b.z;dangerRing.scale.setScalar(1+Math.sin(anim*12)*.1);
  while(waveModels.length<game.waves.length){const m=new T.Mesh(new T.RingGeometry(.97,1,64),new T.MeshBasicMaterial({color:0xf6cb7e,transparent:true,opacity:.85,side:T.DoubleSide}));m.rotation.x=-Math.PI/2;scene.add(m);waveModels.push(m);}waveModels.forEach((m,i)=>{const w=game.waves[i];m.visible=!!w;if(w){m.position.set(w.x,1.38,w.z);m.scale.setScalar(w.r);}});
@@ -565,3 +622,6 @@ if(event.text&&event.type!=='talk')toast(event.text);if(event.type==='talk')show
  if(now>toastUntil)$('toast').classList.remove('show');uiTime+=dt;if(uiTime>.1){ui();uiTime=0;}renderer.render(scene,camera);
 }
 applySettings();ui();$('loading').hidden=true;requestAnimationFrame(frame);if(sessionStorage.getItem('superdog-autostart')){sessionStorage.removeItem('superdog-autostart');launch();}
+// A world change reloads the page: pick the party back up where it left off.
+{const saved=(()=>{try{return unpackParty(sessionStorage.getItem(PARTY_STORAGE));}catch{return null;}})();
+ if(saved)startParty(saved.code,{joined:!saved.host,rejoin:true,host:saved.host});}

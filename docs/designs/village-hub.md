@@ -132,8 +132,14 @@ The rule, which every later step depends on:
 
 `game3d.js` owns it. `Adventure3D` stays a campaign object that knows nothing about the
 village; the village world is swapped into `game.world` with its own spawn, solids and
-empty entity lists, and `adventure3d.js` is not modified. That keeps the 179 existing
-tests green by construction rather than by hope.
+empty entity lists.
+
+One deliberate exception, found while building step 1: falling in the water cost a heart
+even in the village, because `tick` applies fall damage to every world. A fence is not an
+answer, since children jump fences. So the simulation gained one general rule, not a
+village special case: a world may be marked `safe`, and in a safe world a fall costs
+nothing and a bubble carries the player back. Eight words in `adventure3d.js:126`, covered
+by a test that runs a dog out of the village in twenty-four directions.
 
 `createVillage()` must therefore return everything the renderer destructures at load
 (`game3d.js:17`: `PLATFORMS, FRIENDS, KEYS, STARS, BONES, CHECKPOINTS, SPAWN, TREES,
@@ -274,9 +280,11 @@ across a full mesh, it serves none of the success criteria, and the village work
 1. **Does the child want to land in the village every time?** The menu keeps a "straight
    to the island" shortcut. If the village is not used as a hub after a week, flip the
    default back and keep it as a place they visit.
-2. **How long is the rejoin gap after travelling?** If re-forming the party on the island
-   takes more than a few seconds in practice, the reload has to go, which is the bigger
-   refactor named above.
+2. **How long is the rejoin gap after travelling?** Measured, step 0: two peers both
+   reloading re-formed the party in **2.9s and 5.9s** on top of roughly two seconds of page
+   load. Workable, so the reload stays for now, but it is at the edge of what a child will
+   sit through and the arrival must say plainly that it is looking for friends. Re-measure
+   with more than two peers before step 3 is called done.
 3. **How many plots, and what do props cost?** Prices should be readable next to the
    wardrobe's, and cheap enough that the first house arrives the same day.
 4. **Does the build mode work with a finger on a tablet?** The drawing studio's handling
