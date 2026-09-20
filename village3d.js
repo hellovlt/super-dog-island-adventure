@@ -63,9 +63,12 @@ export function createVillage(){
   prop('fence-e',FENCE,0,.8,FENCE*2+1.6,0,1.5,0xbba171),
  ];
  props.push(...fence);
+ // A plot is marked out with four pegs, not paved: a flat slab lying almost level with the
+ // green fights it for the same pixels and shimmers as the camera moves.
+ for(const plot of PLOTS)for(const [sx,sz] of [[-1,-1],[1,-1],[1,1],[-1,1]])
+  props.push(cylinder(`peg-${plot.id}-${sx>0?'e':'w'}${sz>0?'s':'n'}`,plot.x+sx*2.4,plot.z+sz*2.4,.11,0,.55,0xc9a56b));
  const platforms=[
   box('village',0,0,GREEN_RADIUS*2,GREEN_RADIUS*2,0,-6,'island'),
-  ...PLOTS.map(p=>box(p.id,p.x,p.z,5,5,.06,-.2,'grass')),
  ];
  const world={
   ...base,

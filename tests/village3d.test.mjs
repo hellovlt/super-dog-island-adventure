@@ -18,6 +18,12 @@ test('the village is a world of the same shape as an island, with nothing to los
  // supplies an empty array rather than the null the renderer already steps around.
  assert.ok(Array.isArray(village.COURSES),'COURSES is an array, never null');
  assert.ok(village.solidsFor(new Set()).length>10,'the village has ground and walls');
+ // Nothing lies flat on the green at almost its own height: that is what shimmers.
+ for(const solid of village.STATIC_SOLIDS){
+  if(solid.id==='village'||solid.id==='village-beach'||solid.shape==='cylinder')continue;
+  const flat=solid.w>2&&solid.d>2,nearGround=Math.abs(solid.top)<.5&&solid.bottom<.5;
+  assert.ok(!(flat&&nearGround),`${solid.id} is a wide slab at ground level and will z-fight the green`);
+ }
  // A child who lands and runs straight at a gate must not meet a post on the way.
  const spawn=village.SPAWN;
  for(const gate of GATES){
