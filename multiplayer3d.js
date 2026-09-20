@@ -26,24 +26,34 @@ export const pickName=(taken=[],random=Math.random)=>{
 
 // Position and pose, rounded down to what a viewer can actually see, to keep packets small.
 const round=(v,places=2)=>Math.round((Number.isFinite(v)?v:0)*10**places)/10**places;
-export function packState(player,level){
- return [round(player.x),round(player.y),round(player.z),round(player.facing,3),
-  (player.grounded?1:0)|(player.gliding?2:0)|(Math.hypot(player.vx||0,player.vz||0)>1.5?4:0)|(player.dash>0?8:0),level|0];
+// Two spare bits ride in the flags: 16 = standing ready in a gate, 32 = in the village.
+export const READY_FLAG=16,VILLAGE_FLAG=32;
+// A village packet carries its height a thousand units up. A client from before the village
+// rejects any height outside ±200 and draws nothing, which is exactly right: it would
+// otherwise stand this dog inside its own island at village coordinates.
+export const VILLAGE_OFFSET=1000;
+export function packState(player,level,{village=false,ready=false}={}){
+ return [round(player.x),round(player.y)+(village?VILLAGE_OFFSET:0),round(player.z),round(player.facing,3),
+  (player.grounded?1:0)|(player.gliding?2:0)|(Math.hypot(player.vx||0,player.vz||0)>1.5?4:0)|(player.dash>0?8:0)|(ready?READY_FLAG:0)|(village?VILLAGE_FLAG:0),level|0];
 }
 export function unpackState(packet){
  if(!Array.isArray(packet)||packet.length<6||!packet.slice(0,4).every(Number.isFinite))return null;
- const [x,y,z,facing,flags,level]=packet;
+ const [x,rawY,z,facing,flags,level]=packet;
+ const village=!!(flags&VILLAGE_FLAG),y=village?rawY-VILLAGE_OFFSET:rawY;
  if(Math.abs(x)>200||Math.abs(y)>200||Math.abs(z)>200)return null;
- return {x,y,z,facing,grounded:!!(flags&1),gliding:!!(flags&2),moving:!!(flags&4),dashing:!!(flags&8),level:Math.max(0,Math.min(4,level|0))};
+ return {x,y,z,facing,grounded:!!(flags&1),gliding:!!(flags&2),moving:!!(flags&4),dashing:!!(flags&8),ready:!!(flags&READY_FLAG),
+  place:village?'village':'island',level:Math.max(0,Math.min(4,level|0))};
 }
 // A friend's look: only what is needed to draw their dog. The drawing is shared only if they allow it.
-export function packLook({name,cape,hat,fur,drawing}){return {name:String(name??'').slice(0,20),cape:cape|0,hat:String(hat??'hat-none').slice(0,20),fur:fur|0,head:0,drawing:typeof drawing==='string'&&drawing.startsWith('data:image/png;base64,')&&drawing.length<400000?drawing:null};}
+export function packLook({name,cape,hat,fur,drawing,unlocked=1,host=false}){return {name:String(name??'').slice(0,20),cape:cape|0,hat:String(hat??'hat-none').slice(0,20),fur:fur|0,head:0,drawing:typeof drawing==='string'&&drawing.startsWith('data:image/png;base64,')&&drawing.length<400000?drawing:null,unlocked:Math.max(1,Math.min(5,unlocked|0)),host:!!host};}
 export function unpackLook(look,fallbackName='Friend'){
- if(!look||typeof look!=='object')return {name:fallbackName,cape:0xe87862,hat:'hat-none',fur:0xd8a667,drawing:null};
+ if(!look||typeof look!=='object')return {name:fallbackName,cape:0xe87862,hat:'hat-none',fur:0xd8a667,drawing:null,unlocked:1,host:false};
  return {name:(typeof look.name==='string'&&look.name.trim()?look.name:fallbackName).slice(0,20),
   cape:Number.isFinite(look.cape)?look.cape:0xe87862,hat:typeof look.hat==='string'?look.hat.slice(0,20):'hat-none',
   fur:Number.isFinite(look.fur)?look.fur:0xd8a667,
-  drawing:typeof look.drawing==='string'&&look.drawing.startsWith('data:image/png;base64,')&&look.drawing.length<400000?look.drawing:null};
+  drawing:typeof look.drawing==='string'&&look.drawing.startsWith('data:image/png;base64,')&&look.drawing.length<400000?look.drawing:null,
+  // A friend on an older build sends neither: treat them as a newcomer who did not start the party.
+  unlocked:Number.isInteger(look.unlocked)?Math.max(1,Math.min(5,look.unlocked)):1,host:look.host===true};
 }
 // Friends move smoothly between the updates that arrive.
 export const shortestTurn=(from,to)=>{const d=(to-from+Math.PI)%(Math.PI*2);return (d<0?d+Math.PI*2:d)-Math.PI;};
@@ -98,7 +108,7 @@ export function joinParty(code,{look,onRoster,onBark,onJoin,onLeave,onError}={})
  try{looks.send(packLook(look()));}catch(error){onError?.(error);}
  return {
   code:normalizeCode(code),room,friends,roster,
-  sendState:(player,level)=>{state.send(packState(player,level)).catch?.(()=>{});},
+  sendState:(player,level,where)=>{state.send(packState(player,level,where)).catch?.(()=>{});},
   sendLook:()=>{looks.send(packLook(look())).catch?.(()=>{});},
   bark:()=>{barks.send(1).catch?.(()=>{});},
   leave:()=>{try{room.leave();}catch{}friends.clear();announce();},

@@ -66,6 +66,8 @@ test('nothing done in the village can rewrite what was earned on the islands',()
  assert.match(ui,/inVillage\(\)\?\{\.\.\.snap,level:islandSave\.level,progress:islandSave\.progress,challenges:islandSave\.challenges\}/,
   'saving in the village copies progress and challenges through verbatim');
  assert.match(ui,/game\.enemies\.length=0;/,'the island snakes do not follow the child home');
+ assert.match(ui,/state\.place==='village'\?inVillage\(\)/,'friends are together by place, not by island');
+ assert.match(ui,/sendState\(p,game\.level,\{village:inVillage\(\),ready:!!gateWas\}\)/,'the packet says where you are');
  // The danger is real: snapshot() rebuilds progress[level] from the live sets every time.
  const sim=readFileSync(new URL('../adventure3d.js',import.meta.url),'utf8');
  assert.match(sim,/progress:\{\.\.\.this\.progress,\[this\.level\]:this\.levelSnapshot\(\)\}/,

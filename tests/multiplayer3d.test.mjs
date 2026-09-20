@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {makeRoomCode,normalizeCode,isCompleteCode,formatCode,pickName,NAMES,CODE_ALPHABET,CODE_LENGTH,MAX_PLAYERS,
- packState,unpackState,packLook,unpackLook,easeRemote,shortestTurn,roomFull,waitingMessage,LONELY_AFTER,roomConfig,RELAY_REDUNDANCY,APP_ID,packParty,unpackParty} from '../multiplayer3d.js';
+ packState,unpackState,packLook,unpackLook,easeRemote,shortestTurn,roomFull,waitingMessage,LONELY_AFTER,roomConfig,RELAY_REDUNDANCY,APP_ID,packParty,unpackParty,VILLAGE_OFFSET,READY_FLAG,VILLAGE_FLAG} from '../multiplayer3d.js';
 
 test('codes are easy to read aloud, type, and mistype',()=>{
  for(const confusing of ['O','0','I','1','L'])assert.ok(!CODE_ALPHABET.includes(confusing),`${confusing} is not in a child's code`);
@@ -80,4 +80,27 @@ test('a party survives the reload that changing worlds causes',()=>{
  assert.match(ui,/rejoin:true/,'the boot path comes back to the room');
  assert.match(ui,/if\(joined&&!rejoin\)lonelyTimer/,'rejoining never says nobody is there');
  assert.equal((ui.match(/forgetParty\(\)/g)||[]).length>=2,true,'leaving and starting over both clear it');
+});
+test('a dog in the village is invisible to an older build and together with a newer one',()=>{
+ const player={x:3,y:.5,z:-12,facing:1,grounded:true,vx:0,vz:0};
+ const packet=packState(player,2,{village:true,ready:true});
+ assert.equal(packet.length,6,'the packet keeps its old shape');
+ assert.ok(packet[1]>200,'the height is out of the band an older build accepts, so it draws nothing');
+ assert.ok(packet[4]&VILLAGE_FLAG&&packet[4]&READY_FLAG,'both bits are set');
+ const back=unpackState(packet);
+ assert.equal(back.place,'village');assert.equal(back.ready,true);assert.equal(back.y,.5,'a newer build reads the real height');
+ assert.equal(back.level,2,'and still knows which island they would go back to');
+ const island=unpackState(packState(player,2));
+ assert.equal(island.place,'island');assert.equal(island.ready,false);assert.equal(island.y,.5);
+ assert.equal(unpackState([3,.5+VILLAGE_OFFSET,-12,1,0,2]),null,'a tall height without the village bit is still junk');
+ // What the build live before the village does with that packet: reject it.
+ const before=([x,y,z])=>Math.abs(x)>200||Math.abs(y)>200||Math.abs(z)>200?null:{};
+ assert.equal(before(packet),null);
+});
+test('a look says how far you got and whether you started the party',()=>{
+ const look=unpackLook(packLook({name:'Brave Peach',cape:1,hat:'hat-none',fur:2,unlocked:4,host:true}));
+ assert.equal(look.unlocked,4);assert.equal(look.host,true);
+ assert.equal(unpackLook(packLook({name:'x',unlocked:99})).unlocked,5,'never more than the five islands');
+ const old=unpackLook({name:'Speedy Comet',cape:1,hat:'hat-none',fur:2});
+ assert.equal(old.unlocked,1,'a friend on an older build is treated as a newcomer');assert.equal(old.host,false);
 });

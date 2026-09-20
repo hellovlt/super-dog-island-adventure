@@ -207,7 +207,8 @@ const tagPoint=new T.Vector3();
 function drawFriends(dt,anim){
  for(const [id,view] of friendViews){
   const friend=party?.friends.get(id),state=friend?.state;
-  const here=!!state&&state.level===game.level;
+  // Both in the village is together, whatever island each would go back to.
+  const here=!!state&&(state.place==='village'?inVillage():!inVillage()&&state.level===game.level);
   view.group.visible=here;view.shadow.visible=here;view.tag.hidden=!here;
   if(!here)continue;
   view.shown=view.shown?easeRemote(view.shown,state,dt):{x:state.x,y:state.y,z:state.z,facing:state.facing};
@@ -375,7 +376,7 @@ const forgetParty=()=>{try{sessionStorage.removeItem(PARTY_STORAGE);}catch{}};
 const NAME_STORAGE='superdog-name';
 let myName=(()=>{try{return localStorage.getItem(NAME_STORAGE)||pickName();}catch{return pickName();}})();
 const myLook=()=>({name:myName,cape:wornItem(game.wardrobe,'cape',game.secrets).color,hat:wornItem(game.wardrobe,'hat',game.secrets).id,
- fur:wornItem(game.wardrobe,'fur',game.secrets).body,drawing:settings.shareDrawing&&drawing?.cape?drawing.image:null});
+ fur:wornItem(game.wardrobe,'fur',game.secrets).body,drawing:settings.shareDrawing&&drawing?.cape?drawing.image:null,unlocked:game.unlocked,host:partyHost});
 function updatePartyHud(){
  const count=party?party.roster().length:0;
  $('partyHud').hidden=!party;$('partyCount').textContent=count?`${count} friend${count>1?'s':''} · ${party.code}`:`Waiting · ${party?.code??''}`;
@@ -418,7 +419,7 @@ function partyMarkup(){
  const waiting=waitingMessage({joined:partyJoined,friends:roster.length,waitedMs:Date.now()-partyOpenedAt});
  return `<p class="party-wait">${(waiting??'Read this code to your friends. They type it into Join.').replace('Join.','<b>Join</b>.')}</p><div class="party-code">${formatCode(party.code)}</div>
  <h3 class="shelf">On the island (${roster.length+1}/${MAX_PLAYERS})</h3>
- <ul class="party-list"><li><b>${myName}</b> <small>you · ${theme.name}</small></li>${roster.map(f=>`<li><b>${f.look.name}</b> <small>${f.state?LEVELS[f.state.level].name:'arriving…'}</small></li>`).join('')}</ul>
+ <ul class="party-list"><li><b>${myName}</b> <small>you · ${inVillage()?'In the village':theme.name}</small></li>${roster.map(f=>`<li><b>${f.look.name}</b> <small>${f.state?(f.state.place==='village'?'In the village':LEVELS[f.state.level].name):'arriving…'}</small></li>`).join('')}</ul>
  ${roster.length?'':'<p class="set-note">Nobody has joined yet. The code works as long as this screen stays open.</p>'}
  <div class="set-row"><span class="set-label">Show my drawing to friends</span><button type="button" class="set-switch" data-party="drawing" aria-pressed="${!!settings.shareDrawing}"><span></span></button></div>
  <button type="button" class="text-button" data-party="leave">Leave the game</button>`;
@@ -573,21 +574,36 @@ $('boneTotal').textContent=`/ ${BONES.length}`;$('friendBadges').innerHTML=FRIEN
 let gateHold=0,gateWas=null;
 function villageUI(){
  if(!inVillage())return;
- const gate=gateAt(game.player.x,game.player.z),open=gate&&gate.level<game.unlocked;
  $('objective').textContent='Your village. Walk into a gate to set off for an island.';
  $('zone').textContent='Your village';
  $('friendBadges').hidden=true;$('bossHud').hidden=true;
- $('interactPrompt').hidden=!gate;
- if(gate)$('interactPrompt').lastElementChild.textContent=open?`Setting off for ${LEVELS[gate.level].name}…`:`${LEVELS[gate.level].name} is not open yet`;
+ $('interactPrompt').hidden=!gateNote;
+ if(gateNote)$('interactPrompt').lastElementChild.textContent=gateNote;
 }
-// Standing in a gate is the whole action: no button to find, no menu to read.
+// Standing in a gate is the whole action: no button to find, no menu to read. Alone it
+// takes a moment. With friends in the village it waits until everyone who can go is in
+// the same gate, then counts down so they all leave together.
+let gateNote='';
+function gatePlayers(gate){
+ const friends=party?[...party.friends.values()].filter(f=>f.state?.place==='village'):[];
+ return [{gate:gate.level,unlocked:game.unlocked,me:true},
+  ...friends.map(f=>({gate:f.state?gateAt(f.state.x,f.state.z)?.level??null:null,unlocked:f.look?.unlocked??1}))];
+}
 function updateGates(dt){
+ gateNote='';
  if(!inVillage()||game.status!=='playing')return;
  const gate=gateAt(game.player.x,game.player.z);
- if(!gate||gate.level>=game.unlocked){gateHold=0;gateWas=null;return;}
+ if(!gate){gateHold=0;gateWas=null;return;}
+ if(gate.level>=game.unlocked){gateHold=0;gateWas=null;gateNote=`${LEVELS[gate.level].name} is not open yet`;return;}
  if(gate!==gateWas){gateWas=gate;gateHold=0;tone('jump',.7);}
- gateHold+=dt;
- if(gateHold>=1.5){gateHold=0;gateWas=null;tone('key');changeLevel(gate.level);}
+ const players=gatePlayers(gate),eligible=players.filter(p=>p.unlocked>gate.level),together=eligible.length>1;
+ if(together&&!everyoneReady(gate,players)){
+  gateHold=0;const inGate=eligible.filter(p=>p.gate===gate.level).length;
+  gateNote=`Waiting for friends at the gate · ${inGate} of ${eligible.length}`;return;
+ }
+ const wait=together?3:1.5;gateHold+=dt;
+ gateNote=together?`Setting off together in ${Math.max(1,Math.ceil(wait-gateHold))}…`:`Setting off for ${LEVELS[gate.level].name}…`;
+ if(gateHold>=wait){gateHold=0;gateWas=null;tone('key');changeLevel(gate.level);}
 }
 function drawVillageMap(){
  const px=x=>90+x*2.1,pz=z=>90+z*2.1;
@@ -639,7 +655,7 @@ if(event.text&&event.type!=='talk')toast(event.text);if(event.type==='talk')show
  barkTime-=dt;attackRing.visible=barkTime>0;if(barkTime>0){attackRing.scale.setScalar((1-barkTime/.4)*6);attackRing.material.opacity=barkTime/.4;}
  for(let i=particles.length-1;i>=0;i--){const q=particles[i];q.life-=dt;q.v.y-=(q.g??10)*dt;q.m.position.addScaledVector(q.v,dt);if(q.max)q.m.scale.setScalar(q.size*Math.max(.01,q.life/q.max));if(q.spin){q.m.rotation.x+=q.spin*dt;q.m.rotation.z+=q.spin*.6*dt;q.v.x*=1-dt*1.5;q.v.z*=1-dt*1.5;}if(q.life<=0){scene.remove(q.m);particles.splice(i,1);}}
  drawVillage(anim);
- if(party){drawFriends(dt,anim);if(now-partySendAt>80){partySendAt=now;party.sendState(p,game.level);}}
+ if(party){drawFriends(dt,anim);if(now-partySendAt>80){partySendAt=now;party.sendState(p,game.level,{village:inVillage(),ready:!!gateWas});}}
  clouds.forEach((c,i)=>c.position.x+=Math.sin(i+anim*.03)*dt*.18);updateWeather(dt,anim,menuMode?{x:0,z:0}:p);
  if(volcanoCrater&&(smokeT-=dt)<0){smokeT=.4;const m=ball(0x9a8f98,volcanoCrater.x+rnd(-.5,.5),volcanoCrater.y,volcanoCrater.z+rnd(-.5,.5),.9);m.castShadow=false;particles.push({m,v:new T.Vector3(rnd(-.4,.4),1.7,rnd(-.4,.4)),life:3.4,max:3.4,size:.9+rnd(0,.6),g:-.1});}
  if(previewMode&&$('modal').hidden){previewMode=false;camera.clearViewOffset();$('menu').style.visibility='';}
@@ -661,4 +677,4 @@ if(event.text&&event.type!=='talk')toast(event.text);if(event.type==='talk')show
 applySettings();ui();$('loading').hidden=true;requestAnimationFrame(frame);if(sessionStorage.getItem('superdog-autostart')){sessionStorage.removeItem('superdog-autostart');launch();}
 // A world change reloads the page: pick the party back up where it left off.
 {const saved=(()=>{try{return unpackParty(sessionStorage.getItem(PARTY_STORAGE));}catch{return null;}})();
- if(saved)startParty(saved.code,{joined:!saved.host,rejoin:true,host:saved.host});}
+ if(saved){startParty(saved.code,{joined:!saved.host,rejoin:true,host:saved.host});toast('Finding your friends again…');}}

@@ -321,6 +321,23 @@ Existing pipeline: push to `main`, GitHub Pages deploys, the service worker upda
 tells players a new version is ready. `village3d.js` must be added to `sw.js` with a
 `VERSION` bump in the same commit.
 
+## Build Status
+
+- **Step 0, done.** Two peers re-form after a reload in 2.9-5.9s (see Open Question 2).
+- **Step 1, done** (`1377517`). Village world, gates, per-viewer lock, save guard with its
+  test, safe water, fence, boss and island HUD hidden, village minimap, way back from the
+  pause screen, `sw.js` bumped.
+- **Step 2, done** (`d0856b7`). Villagers, statues and banner from the save as loaded.
+- **Step 3, done.** Village and ready bits, out-of-band height for old builds, co-location
+  by place, `unlocked` and `host` in the look packet, the gate that waits for everyone who
+  can go and counts down, rejoin with host identity and a "finding your friends" line.
+  Verified with two browsers end to end: "Waiting for friends at the gate · 1 of 2", then
+  "Setting off together in 3…", then both on Sunny Island with the party re-formed.
+  One piece deferred into step 4 because it is the same transport: a visitor still sees
+  their *own* villagers and statues rather than the host's. The layout is shared, so
+  nothing is incoherent; the host's decor rides along with the plots summary.
+- **Step 4, not started.** Building.
+
 ## Next Steps
 
 0. **Spike, half an hour.** Measure how long eight peers take to re-form a party after a

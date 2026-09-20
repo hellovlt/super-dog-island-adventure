@@ -20,6 +20,8 @@ for(const b of qaPanel.querySelectorAll('[data-drive]'))b.onclick=()=>{
  const kind=b.dataset.drive;qaDrive=kind==='stop'?null:{kind,started:game.time,end:game.time+2,first:true,second:false};
  if(game.status==='paused'){game.resume();$('modal').hidden=true;}canvas.focus();
 };
+// Put the dog somewhere exactly, for checks that are about being there rather than getting there.
+window.qaTeleport=(x,z)=>{Object.assign(game.player,{x,z,vx:0,vz:0,vy:0});return `${game.player.x},${game.player.z}`;};
 function qaInput(){if(!qaDrive)return null;if(game.time>=qaDrive.end){qaDrive=null;return null;}const d=qaDrive,result={x:d.kind==='left'?-1:d.kind==='right'?1:0,z:d.kind==='back'?1:d.kind==='forward'||d.kind==='dash'?-1:0};if(d.kind==='dash'&&d.first)result.dash=true;if(d.kind==='jump'&&(d.first||(!d.second&&game.player.vy<.1&&game.player.jumps===1))){result.jump=true;if(!d.first)d.second=true;}d.first=false;return result;}
 setInterval(()=>{const p=game.player;document.getElementById('qaReadout').textContent=`${game.status} | ${game.difficulty} | HP ${p.hp}/${game.maxHP}\nx ${p.x.toFixed(2)} · y ${p.y.toFixed(2)} · z ${p.z.toFixed(2)}\ngrounded ${p.grounded} · friends ${game.rescued.size}/3\nboss ${game.boss.state} ${game.boss.hp}/${game.rules.bossHP}\n${qaDrive?'Input: '+qaDrive.kind:'Input: idle'} · ${qaFPS} FPS · ${renderer.info.render.calls} draw calls`;},100);
 const initialScene=new URLSearchParams(location.search).get('scene');if(initialScene&&qaScenes[initialScene]){document.getElementById('qaScene').value=initialScene;document.getElementById('qaLoad').click();}
