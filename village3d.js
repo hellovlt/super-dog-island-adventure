@@ -3,6 +3,7 @@
 // need no special cases, but it holds no bones, no keys, no cages and no giant. Nothing
 // here is ever written into the campaign save: see placeGuard in game3d.js.
 import * as base from './world3d.js';
+import {createWorld,LEVELS} from './campaign3d.js';
 
 const box=(id,x,z,w,d,top,bottom=-3,kind='grass')=>({id,x,z,w,d,top,bottom,kind});
 const cylinder=(id,x,z,radius,bottom,top,color)=>({id,shape:'cylinder',x,z,radius,bottom,top,color});
@@ -48,6 +49,8 @@ export function createVillage(){
   // spawn to the gates has to be clear, or they run straight into it.
   cylinder('signpost',-4.5,13,.22,0,3.4,0xa58052),
   prop('signpost-board',-4.5,13,3.2,.22,2.3,3.2,0xe8d7ab),
+  // The banner pole on the other side of the landing spot: the child's own drawing flies here.
+  cylinder('banner-pole',4.5,13,.1,0,4.8,0xa58052),
   ...gateProps(),
  ];
  // A fence all the way round. Nothing here is meant to be survived, so the child simply
@@ -101,4 +104,32 @@ export function everyoneReady(gate,players){
  if(!gate||!players.length)return false;
  const eligible=players.filter(p=>p.unlocked>gate.level);
  return eligible.length>0&&eligible.every(p=>p.gate===gate.level);
+}
+
+// What the child has done, turned into who lives here. Read from the campaign save exactly
+// as it was loaded: nothing here is stored, so nothing here can drift from the islands.
+const validLevel=level=>Number.isInteger(level)&&level>=0&&level<LEVELS.length;
+export function villagersFor(progress={}){
+ const villagers=[];
+ for(const [key,entry] of Object.entries(progress||{})){
+  const level=Number(key);if(!validLevel(level)||!Array.isArray(entry?.rescued))continue;
+  const friends=createWorld(level).FRIENDS;
+  for(const friend of friends)if(entry.rescued.includes(friend.id))villagers.push({id:`${level}-${friend.id}`,level,name:friend.name,color:friend.color});
+ }
+ // Around the south half of the green, in a loose ring, clear of the plots and the gates.
+ return villagers.map((v,i)=>{
+  const angle=Math.PI*(0.28+(i%9)*0.055)+(i>=9?Math.PI*0.02:0),radius=i>=9?9.5:13.5;
+  return {...v,x:Math.round(Math.cos(angle)*radius*10)/10,z:Math.round(Math.sin(angle)*radius*10)/10,facing:angle+Math.PI};
+ });
+}
+// A beaten giant stands in stone beside the gate of the island it guarded.
+export function statuesFor(progress={}){
+ const statues=[];
+ for(const gate of GATES){
+  const entry=progress?.[gate.level];if(entry?.won!==true)continue;
+  const out=Math.atan2(gate.z,gate.x);
+  // Just outside the arch, on the side away from the middle, so the gate itself stays clear.
+  statues.push({level:gate.level,name:LEVELS[gate.level].boss,x:Math.round((gate.x+Math.cos(out+Math.PI/2)*4.6)*10)/10,z:Math.round((gate.z+Math.sin(out+Math.PI/2)*4.6)*10)/10,facing:out+Math.PI});
+ }
+ return statues;
 }

@@ -1,6 +1,6 @@
 import * as T from './vendor/three.module.js';
 import {Adventure3D,DIFFICULTIES,LEVELS,createWorld,hasProgress,CRYSTALS} from './adventure3d.js';
-import {createVillage,gateAt,everyoneReady,GATES,VILLAGE_SPAWN} from './village3d.js';
+import {createVillage,gateAt,everyoneReady,villagersFor,statuesFor,GATES,VILLAGE_SPAWN} from './village3d.js';
 import {safeCamera} from './collision3d.js';
 import {DRAWING_STORAGE,parseDrawing,stickerCanvas,studioMarkup,mountStudio} from './drawing3d.js';
 import {SOUND_STORAGE,playSfx,createMusic} from './audio3d.js';
@@ -232,19 +232,55 @@ function starModel(){const s=new T.Shape();for(let i=0;i<10;i++){const a=i*Math.
 const pickups=[];for(const [list,kind] of [[BONES,'bone'],[KEYS,'key'],[STARS,'star']])for(const c of list){const m=kind==='bone'?boneModel():kind==='key'?keyModel():starModel();m.position.set(c.x,c.y,c.z);scene.add(m);pickups.push({data:c,mesh:m,kind,base:m.scale.x,pop:game.collected.has(c.id)?0:undefined});}
 function snakeModel(big=false){const g=new T.Group(),segments=[];const color=big?0x9075bb:0x83ad64;for(let i=0;i<6;i++){const s=ball(color,Math.sin(i*.7)*.15,.35,-i*.36,.43-i*.045,g,.82,1.1);segments.push(s);}ball(big?0xae8ecd:0xa3c774,0,.7,.2,.53,g,.85,1.1);for(const x of [-.2,.2]){ball(0xffe39c,x,.91,.55,.13,g);ball(0x354835,x,.92,.65,.065,g);}cube(0xe99780,0,.5,.84,.09,.045,.3,g);if(big){cylinder(0xf3c65b,0,1.2,.15,.39,.22,g);for(let i=0;i<5;i++){const a=i*Math.PI*2/5;mesh('cone',0xffd475,Math.sin(a)*.34,1.48,.15+Math.cos(a)*.34,.12,.4,.12,g);}g.scale.setScalar(3);}g.userData.segments=segments;return g;}
 const enemyModels=new Map();for(const e of game.enemies){const m=snakeModel();scene.add(m);enemyModels.set(e.id,m);}const bossModel=giantBossModel();scene.add(bossModel);bossModel.userData.baseScale=theme.scale;
-function giantBossModel(){
+// The giant's silhouette, by world. The boss uses it in colour; a village statue in stone.
+function giantFigure(level,color,scale,stone=false){
+ const c=x=>stone?0xb5b1a3:x;
  const g=new T.Group(),head=new T.Group();g.add(head);
  // A coiled silhouette keeps the entire giant inside its physical footprint.
- for(let i=0;i<12;i++){const a=i*Math.PI/6;ball(theme.color,Math.sin(a)*.31,.24,Math.cos(a)*.31,.28,g,.9,1);}
- ball(theme.color,0,.63,0,.43,g,1.1,1);ball(theme.color,0,1.05,.03,.48,head,.85,1);
- for(const x of [-.2,.2]){ball(0xfff6d6,x,1.16,.39,.13,head);ball(0x343149,x,1.16,.49,.06,head);}
- cube(0xf59b92,0,.92,.49,.18,.035,.16,head);
- if(game.level===1){cylinder(0xffb6ba,0,1.44,0,.56,.2,head);for(let i=0;i<6;i++){const a=i*Math.PI/3;ball(0xfff6d6,Math.sin(a)*.35,1.56,Math.cos(a)*.35,.08,head);}}
- else if(game.level===2){for(const x of [-.3,0,.3])mesh('cone',0xc9f8ff,x,1.56,0,.12,.7,.12,head);}
- else if(game.level===3){for(const x of [-.34,.34])mesh('cone',0xffcc85,x,1.5,0,.16,.65,.16,head);for(let i=0;i<3;i++)mesh('cone',0xfab36e,0,.55+i*.22,-.38,.12,.3,.12,g);}
- else{cylinder(0xf3c65b,0,1.46,0,.39,.2,head);for(let i=0;i<5;i++){const a=i*Math.PI*2/5;mesh('cone',0xffd475,Math.sin(a)*.32,1.66,Math.cos(a)*.32,.11,.4,.11,head);}}
- if(game.level===4){for(const x of [-.4,.4])ball(0xffebc7,x,.66,-.05,.22,g,1.8,.45);}
- g.scale.setScalar(theme.scale);g.userData.head=head;return g;
+ for(let i=0;i<12;i++){const a=i*Math.PI/6;ball(c(color),Math.sin(a)*.31,.24,Math.cos(a)*.31,.28,g,.9,1);}
+ ball(c(color),0,.63,0,.43,g,1.1,1);ball(c(color),0,1.05,.03,.48,head,.85,1);
+ for(const x of [-.2,.2]){ball(c(0xfff6d6),x,1.16,.39,.13,head);ball(c(0x343149),x,1.16,.49,.06,head);}
+ cube(c(0xf59b92),0,.92,.49,.18,.035,.16,head);
+ if(level===1){cylinder(c(0xffb6ba),0,1.44,0,.56,.2,head);for(let i=0;i<6;i++){const a=i*Math.PI/3;ball(c(0xfff6d6),Math.sin(a)*.35,1.56,Math.cos(a)*.35,.08,head);}}
+ else if(level===2){for(const x of [-.3,0,.3])mesh('cone',c(0xc9f8ff),x,1.56,0,.12,.7,.12,head);}
+ else if(level===3){for(const x of [-.34,.34])mesh('cone',c(0xffcc85),x,1.5,0,.16,.65,.16,head);for(let i=0;i<3;i++)mesh('cone',c(0xfab36e),0,.55+i*.22,-.38,.12,.3,.12,g);}
+ else{cylinder(c(0xf3c65b),0,1.46,0,.39,.2,head);for(let i=0;i<5;i++){const a=i*Math.PI*2/5;mesh('cone',c(0xffd475),Math.sin(a)*.32,1.66,Math.cos(a)*.32,.11,.4,.11,head);}}
+ if(level===4){for(const x of [-.4,.4])ball(c(0xffebc7),x,.66,-.05,.22,g,1.8,.45);}
+ g.scale.setScalar(scale);g.userData.head=head;return g;
+}
+function giantBossModel(){return giantFigure(game.level,theme.color,theme.scale);}
+// The village remembers. Rescued friends live here, beaten giants stand in stone beside
+// the gate they guarded, and the child's drawing flies as a banner. All of it is read
+// from the campaign save as loaded; none of it is stored.
+const villagerViews=[],statueViews=[];let banner=null;
+if(inVillage()){
+ for(const v of villagersFor(islandSave.progress)){
+  const g=dogModel(v.color,.7);g.position.set(v.x,.1,v.z);g.rotation.y=v.facing;scene.add(g);
+  const tag=document.createElement('div');tag.className='tag';tag.textContent=v.name;$('tags').append(tag);
+  villagerViews.push({group:g,tag,seed:v.x*.37+v.z*.11,home:v});
+ }
+ for(const st of statuesFor(islandSave.progress)){
+  cylinder(0xc4c0ae,st.x,.3,st.z,1.6,.6);
+  const figure=giantFigure(st.level,0xb5b1a3,1.7,true);figure.position.set(st.x,.6,st.z);figure.rotation.y=st.facing;scene.add(figure);
+  statueViews.push({figure,statue:st});
+ }
+ const pole=group(4.5,0,13);banner=cube(0xf5c563,1.05,3.55,0,2.1,1.35,.04,pole);ball(0xffedb7,0,4.85,0,.14,pole);
+}
+function drawVillage(anim){
+ if(!inVillage())return;
+ const p=game.player;
+ for(const view of villagerViews){
+  const g=view.group,near=Math.hypot(p.x-g.position.x,p.z-g.position.z)<6;
+  g.position.y=.1+Math.abs(Math.sin(anim*2.4+view.seed))*(near?.28:.08);
+  const want=near?Math.atan2(p.x-g.position.x,p.z-g.position.z):view.home.facing;
+  g.rotation.y+=Math.atan2(Math.sin(want-g.rotation.y),Math.cos(want-g.rotation.y))*.08;
+  g.userData.tail.rotation.z=Math.sin(anim*(near?18:6))*(near?.5:.3);
+  tagPoint.set(g.position.x,g.position.y+1.9,g.position.z).project(camera);
+  const onScreen=tagPoint.z<1&&Math.abs(tagPoint.x)<1.3&&Math.abs(tagPoint.y)<1.3;
+  view.tag.hidden=!onScreen;
+  if(onScreen){view.tag.style.left=`${(tagPoint.x*.5+.5)*innerWidth}px`;view.tag.style.top=`${(-tagPoint.y*.5+.5)*innerHeight}px`;}
+ }
+ if(banner){banner.material=drawing&&drawingMats?drawingMats.flag:mat(0xf5c563);banner.rotation.y=Math.sin(anim*2.2)*.12;}
 }
 // World weather: spores, snow, embers, or sparkles drift around Super Dog (one draw call).
 const weather=[null,{color:0xf7ffd9,count:140,vy:.35,size:.2},{color:0xffffff,count:320,vy:-1.4,size:.17},{color:0xffb35a,count:160,vy:1.1,size:.15},{color:0xfff3c4,count:120,vy:.2,size:.18}][game.level];
@@ -602,6 +638,7 @@ if(event.text&&event.type!=='talk')toast(event.text);if(event.type==='talk')show
  while(waveModels.length<game.waves.length){const m=new T.Mesh(new T.RingGeometry(.97,1,64),new T.MeshBasicMaterial({color:0xf6cb7e,transparent:true,opacity:.85,side:T.DoubleSide}));m.rotation.x=-Math.PI/2;scene.add(m);waveModels.push(m);}waveModels.forEach((m,i)=>{const w=game.waves[i];m.visible=!!w;if(w){m.position.set(w.x,1.38,w.z);m.scale.setScalar(w.r);}});
  barkTime-=dt;attackRing.visible=barkTime>0;if(barkTime>0){attackRing.scale.setScalar((1-barkTime/.4)*6);attackRing.material.opacity=barkTime/.4;}
  for(let i=particles.length-1;i>=0;i--){const q=particles[i];q.life-=dt;q.v.y-=(q.g??10)*dt;q.m.position.addScaledVector(q.v,dt);if(q.max)q.m.scale.setScalar(q.size*Math.max(.01,q.life/q.max));if(q.spin){q.m.rotation.x+=q.spin*dt;q.m.rotation.z+=q.spin*.6*dt;q.v.x*=1-dt*1.5;q.v.z*=1-dt*1.5;}if(q.life<=0){scene.remove(q.m);particles.splice(i,1);}}
+ drawVillage(anim);
  if(party){drawFriends(dt,anim);if(now-partySendAt>80){partySendAt=now;party.sendState(p,game.level);}}
  clouds.forEach((c,i)=>c.position.x+=Math.sin(i+anim*.03)*dt*.18);updateWeather(dt,anim,menuMode?{x:0,z:0}:p);
  if(volcanoCrater&&(smokeT-=dt)<0){smokeT=.4;const m=ball(0x9a8f98,volcanoCrater.x+rnd(-.5,.5),volcanoCrater.y,volcanoCrater.z+rnd(-.5,.5),.9);m.castShadow=false;particles.push({m,v:new T.Vector3(rnd(-.4,.4),1.7,rnd(-.4,.4)),life:3.4,max:3.4,size:.9+rnd(0,.6),g:-.1});}

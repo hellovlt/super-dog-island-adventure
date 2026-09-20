@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {Adventure3D,LEVELS} from '../adventure3d.js';
-import {createVillage,gateAt,everyoneReady,GATES,PLOTS,VILLAGE_SPAWN,GREEN_RADIUS} from '../village3d.js';
+import {createVillage,gateAt,everyoneReady,villagersFor,statuesFor,GATES,PLOTS,VILLAGE_SPAWN,GREEN_RADIUS} from '../village3d.js';
 
 test('the village is a world of the same shape as an island, with nothing to lose in it',()=>{
  const village=createVillage(),island=new Adventure3D(null).world;
@@ -103,4 +103,25 @@ test('a child cannot fall out of their own village, in any direction',()=>{
   // The shore outside the fence is still the village; the sea is not.
   assert.ok(Math.abs(p.x)<GREEN_RADIUS+4.5&&Math.abs(p.z)<GREEN_RADIUS+4.5,`${degrees}° left the village at ${p.x.toFixed(1)},${p.z.toFixed(1)}`);
  }
+});
+
+test('the village fills with the friends the child rescued and the giants they beat',()=>{
+ assert.deepEqual(villagersFor({}),[],'a fresh save has an empty green');
+ assert.deepEqual(statuesFor(undefined),[]);
+ const progress={0:{rescued:['peach','spark','fluff'],won:true},1:{rescued:['peach'],won:false},7:{rescued:['peach'],won:true},junk:{rescued:'peach'}};
+ const villagers=villagersFor(progress);
+ assert.deepEqual(villagers.map(v=>v.name),['Peach','Spark','Fluff','Moss'],'named as they were on their islands, junk levels ignored');
+ assert.equal(new Set(villagers.map(v=>v.id)).size,4,'the same friend from two worlds is two villagers');
+ for(const v of villagers){
+  assert.equal(gateAt(v.x,v.z),null,`${v.name} is not standing in a gate`);
+  for(const plot of PLOTS)assert.ok(Math.hypot(v.x-plot.x,v.z-plot.z)>3.2,`${v.name} is not standing on ${plot.id}`);
+  assert.ok(Math.hypot(v.x,v.z)<GREEN_RADIUS-4,`${v.name} is on the green`);
+ }
+ const statues=statuesFor(progress);
+ assert.deepEqual(statues.map(s=>s.name),['Snake King'],'only a beaten giant gets a statue');
+ assert.ok(Math.hypot(statues[0].x-GATES[0].x,statues[0].z-GATES[0].z)>GATES[0].radius,'and it stands beside the gate, not in it');
+ // Every possible statue keeps its gate clear.
+ const all=statuesFor({0:{won:true},1:{won:true},2:{won:true},3:{won:true},4:{won:true}});
+ assert.equal(all.length,5);
+ for(const statue of all)assert.equal(gateAt(statue.x,statue.z),null,`${statue.name} blocks a gate`);
 });
