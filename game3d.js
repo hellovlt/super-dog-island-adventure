@@ -1,6 +1,6 @@
 import * as T from './vendor/three.module.js';
 import {Adventure3D,DIFFICULTIES,LEVELS,createWorld,hasProgress,CRYSTALS} from './adventure3d.js';
-import {createVillage,gateAt,everyoneReady,villagersFor,statuesFor,GATES,VILLAGE_SPAWN} from './village3d.js';
+import {createVillage,gateAt,everyoneReady,villagersFor,statuesFor,GATES,GATE_COLORS,PLOTS,VILLAGE_SPAWN} from './village3d.js';
 import {safeCamera} from './collision3d.js';
 import {DRAWING_STORAGE,parseDrawing,stickerCanvas,studioMarkup,mountStudio} from './drawing3d.js';
 import {SOUND_STORAGE,playSfx,createMusic} from './audio3d.js';
@@ -223,6 +223,16 @@ function drawFriends(dt,anim){
   view.tag.hidden=!onScreen;
   if(onScreen){view.tag.style.left=`${(tagPoint.x*.5+.5)*innerWidth}px`;view.tag.style.top=`${(-tagPoint.y*.5+.5)*innerHeight}px`;}
  }
+ for(const v of gateViews){
+  const pulse=.5+.5*Math.sin(anim*2.6+v.seed);
+  v.portal.material.opacity=v.open?.26+pulse*.24:.1;
+  v.pad.material.opacity=v.open?.4+pulse*.35:.2;
+  v.pad.scale.setScalar(v.open?1+pulse*.05:1);
+  tagPoint.set(v.gate.x,5.9,v.gate.z).project(camera);
+  const onScreen=tagPoint.z<1&&Math.abs(tagPoint.x)<1.3&&Math.abs(tagPoint.y)<1.3;
+  v.tag.hidden=!onScreen;
+  if(onScreen){v.tag.style.left=`${(tagPoint.x*.5+.5)*innerWidth}px`;v.tag.style.top=`${(-tagPoint.y*.5+.5)*innerHeight}px`;}
+ }
 }
 const dogShadow=new T.Mesh(new T.CircleGeometry(.65,24),new T.MeshBasicMaterial({color:0x3b6546,transparent:true,opacity:.18,depthWrite:false}));dogShadow.rotation.x=-Math.PI/2;scene.add(dogShadow);
 const cages=new Map(),friendModels=new Map();
@@ -253,7 +263,7 @@ function giantBossModel(){return giantFigure(game.level,theme.color,theme.scale)
 // The village remembers. Rescued friends live here, beaten giants stand in stone beside
 // the gate they guarded, and the child's drawing flies as a banner. All of it is read
 // from the campaign save as loaded; none of it is stored.
-const villagerViews=[],statueViews=[];
+const villagerViews=[],statueViews=[],gateViews=[];
 if(inVillage()){
  for(const v of villagersFor(islandSave.progress)){
   const g=dogModel(v.color,.7);g.position.set(v.x,.1,v.z);g.rotation.y=v.facing;scene.add(g);
@@ -264,6 +274,21 @@ if(inVillage()){
   cylinder(0xc4c0ae,st.x,.3,st.z,1.6,.6);
   const figure=giantFigure(st.level,0xb5b1a3,1.7,true);figure.position.set(st.x,.6,st.z);figure.rotation.y=st.facing;scene.add(figure);
   statueViews.push({figure,statue:st});
+ }
+ // Each gate in its island's colour, a glowing doorway between the pillars, a ring on the
+ // ground where "in the gate" is, and the island's name over the arch. A closed one is grey
+ // and dim, with a lock in front of its name.
+ for(const g of GATES){
+  const color=GATE_COLORS[g.level],open=g.level<game.unlocked,stone=open?color:0x9a9a92;
+  const view=group(g.x,0,g.z);view.rotation.y=Math.atan2(-g.x,-g.z);
+  for(const x of [-1.98,1.98])cube(stone,x,2.3,0,.9,4.6,.9,view);
+  cube(stone,0,4.95,0,4.5,.7,.9,view);
+  const portal=new T.Mesh(new T.PlaneGeometry(3.1,4.4),new T.MeshBasicMaterial({color,transparent:true,opacity:open?.38:.1,side:T.DoubleSide,depthWrite:false}));
+  portal.position.y=2.35;view.add(portal);
+  const pad=new T.Mesh(new T.RingGeometry(2,g.radius,40),new T.MeshBasicMaterial({color,transparent:true,opacity:open?.6:.2,side:T.DoubleSide,depthWrite:false}));
+  pad.rotation.x=-Math.PI/2;pad.position.set(g.x,.05,g.z);scene.add(pad);
+  const tag=document.createElement('div');tag.className='tag';tag.textContent=(open?'':'🔒 ')+LEVELS[g.level].name;$('tags').append(tag);
+  gateViews.push({gate:g,open,portal,pad,tag,seed:g.level*1.7});
  }
 }
 function drawVillage(anim){
@@ -576,6 +601,8 @@ function villageUI(){
  $('objective').textContent='Your village. Walk into a gate to set off for an island.';
  $('zone').textContent='Your village';
  $('friendBadges').hidden=true;$('bossHud').hidden=true;
+ // Nothing to collect here, so no bone, star or key counts to read.
+ document.querySelector('.collectibles').hidden=true;
  $('interactPrompt').hidden=!gateNote;
  if(gateNote)$('interactPrompt').lastElementChild.textContent=gateNote;
 }
@@ -605,10 +632,16 @@ function updateGates(dt){
  if(gateHold>=wait){gateHold=0;gateWas=null;tone('key');changeLevel(gate.level);}
 }
 function drawVillageMap(){
- const px=x=>90+x*2.1,pz=z=>90+z*2.1;
+ // The green is square and so is the fence; the map says so, and shows each gate in the
+ // colour it glows in, so a child can match the map to what they see.
+ const S=2.1,px=x=>90+x*S,pz=z=>90+z*S;
  map.clearRect(0,0,180,180);map.fillStyle=css(theme.sea);map.fillRect(0,0,180,180);
- map.fillStyle=css(theme.ground);map.beginPath();map.arc(px(0),pz(0),34*2.1,0,7);map.fill();
- for(const gate of GATES){map.beginPath();map.fillStyle=gate.level<game.unlocked?'#ffeb78':'#8d8f86';map.arc(px(gate.x),pz(gate.z),4,0,7);map.fill();}
+ map.fillStyle='#e9dfb9';map.fillRect(px(-38),pz(-38),76*S,76*S);
+ map.fillStyle=css(theme.ground);map.fillRect(px(-34),pz(-34),68*S,68*S);
+ map.strokeStyle='#c9a56b';map.lineWidth=2;map.strokeRect(px(-35.5),pz(-35.5),71*S,71*S);
+ map.globalAlpha=.5;map.fillStyle='#fff8e4';for(const p of PLOTS)map.fillRect(px(p.x-2.4),pz(p.z-2.4),4.8*S,4.8*S);map.globalAlpha=1;
+ map.fillStyle='#a58052';map.fillRect(px(-4.5)-1.5,pz(13)-1.5,3,3);
+ for(const g of GATES){const open=g.level<game.unlocked;map.beginPath();map.fillStyle=open?css(GATE_COLORS[g.level]):'#8d8f86';map.arc(px(g.x),pz(g.z),5,0,7);map.fill();map.lineWidth=1.5;map.strokeStyle='#2f4a3d';map.stroke();}
  const p=game.player;map.save();map.translate(px(p.x),pz(p.z));map.rotate(-p.facing);
  map.fillStyle='#fff9e7';map.strokeStyle='#385845';map.lineWidth=1.5;map.beginPath();map.moveTo(0,5);map.lineTo(-4,-4);map.lineTo(4,-4);map.closePath();map.fill();map.stroke();map.restore();
  map.fillStyle='#406656';map.font='bold 9px sans-serif';map.fillText('N',86,12);

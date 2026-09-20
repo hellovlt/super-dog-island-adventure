@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {Adventure3D,LEVELS} from '../adventure3d.js';
-import {createVillage,gateAt,everyoneReady,villagersFor,statuesFor,GATES,PLOTS,VILLAGE_SPAWN,GREEN_RADIUS} from '../village3d.js';
+import {createVillage,gateAt,everyoneReady,villagersFor,statuesFor,GATES,GATE_COLORS,PLOTS,VILLAGE_SPAWN,GREEN_RADIUS} from '../village3d.js';
 
 test('the village is a world of the same shape as an island, with nothing to lose in it',()=>{
  const village=createVillage(),island=new Adventure3D(null).world;
@@ -143,4 +143,30 @@ test('every flag in every world has a pole to fly from',()=>{
   assert.ok(pole,`${world.meta.name}: checkpoint ${c.id} has no pole`);
   assert.ok(Math.abs(pole.x-(c.x-2))<.01&&Math.abs(pole.z-c.z)<.01,`${world.meta.name}: the ${c.id} pole stands where the flag is drawn`);
  }
+});
+
+test('each gate glows in its own colour, and the map shows the same one on the same square green',()=>{
+ assert.equal(GATE_COLORS.length,LEVELS.length,'one colour per island');
+ const rgb=c=>[c>>16&255,c>>8&255,c&255];
+ for(let a=0;a<GATE_COLORS.length;a++)for(let b=a+1;b<GATE_COLORS.length;b++){
+  const [r1,g1,b1]=rgb(GATE_COLORS[a]),[r2,g2,b2]=rgb(GATE_COLORS[b]);
+  assert.ok(Math.hypot(r1-r2,g1-g2,b1-b2)>90,`gates ${a} and ${b} are too alike for a child to tell apart`);
+ }
+ const village=createVillage();
+ assert.ok(!village.PROPS.some(p=>p.id.startsWith('gate-')),'gates are no longer plain beige props');
+ assert.equal(village.STATIC_SOLIDS.filter(s=>s.id.startsWith('gate-')).length,15,'but each still stands solid: two pillars and an arch');
+ const ui=readFileSync(new URL('../game3d.js',import.meta.url),'utf8');
+ assert.match(ui,/const color=GATE_COLORS\[g\.level\],open=g\.level<game\.unlocked/,'the village draws each gate in its colour, dim when closed');
+ assert.match(ui,/tag\.textContent=\(open\?'':'🔒 '\)\+LEVELS\[g\.level\]\.name/,'and writes the island name over the arch');
+ assert.match(ui,/fillStyle=open\?css\(GATE_COLORS\[g\.level\]\):'#8d8f86'/,'the minimap uses the same colours');
+ assert.match(ui,/fillRect\(px\(-34\),pz\(-34\),68\*S,68\*S\)/,'and shows the square green rather than a circle');
+});
+
+test('the village never shows a key count below zero, or any count at all',()=>{
+ const game=new Adventure3D(null,{level:1});game.start();
+ for(const friend of game.world.FRIENDS)game.rescued.add(friend.id);
+ game.world=createVillage();game.solids=game.world.solidsFor(new Set());
+ assert.equal(game.keyCount,0,'three friends rescued and no keys in this world is zero, not minus three');
+ const ui=readFileSync(new URL('../game3d.js',import.meta.url),'utf8');
+ assert.match(ui,/document\.querySelector\('\.collectibles'\)\.hidden=true;/,'the counters are hidden in the village');
 });

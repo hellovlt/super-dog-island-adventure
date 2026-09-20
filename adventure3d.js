@@ -59,7 +59,8 @@ export class Adventure3D {
  advance(){return this.boss.hp<=0&&this.level<4?this.selectLevel(this.level+1):false;}
  nearbySecret(){return this.world.EGGS.find(e=>!this.secrets.has(e.id)&&distance(this.player,e)<2.6&&Math.abs(this.player.y-e.y)<1.5&&clearSight(eye(this.player),eye(e),this.solids));}
  discoverSecret(){const e=this.nearbySecret();if(!e)return false;this.secrets.add(e.id);this.emit('secret',`${e.name}: ${e.text}`);return true;}
- get keyCount(){return this.world.KEYS.filter(k=>this.collected.has(k.id)).length-this.rescued.size;}
+ // Never below zero: a world with no keys at all, such as the village, still has friends rescued.
+ get keyCount(){return Math.max(0,this.world.KEYS.filter(k=>this.collected.has(k.id)).length-this.rescued.size);}
  get boneCount(){return this.world.BONES.filter(k=>this.collected.has(k.id)).length;}
  get starCount(){return this.world.STARS.filter(k=>this.collected.has(k.id)).length;}
  get objective(){return this.boss.hp<=0?this.level<4?'World saved! The next level is unlocked.':'Five worlds saved! Complete your secret album.':this.rescued.size<3?`Rescue friends: ${this.rescued.size} / 3. Keys open cages.`:this.boss.state!=='sleep'?'Dodge charges. Bark while the giant rests!':`All friends are free! Across the bridge awaits ${this.world.meta.boss}.`;}

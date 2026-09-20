@@ -19,6 +19,9 @@ export const GREEN_RADIUS=34;
 // Five gates stand in an arc across the north of the green, in campaign order from the
 // left, so the island a child has played longest is always in the same place.
 export const GATE_RADIUS=25;
+// One colour per island, chosen to be told apart at a glance: sun gold, mushroom pink, ice
+// blue, lava orange, sky violet. The gate glows in it, and the minimap uses the same one.
+export const GATE_COLORS=[0xf5c563,0xe0668f,0x7fd4ff,0xff4b1f,0x9b6bff];
 export const GATES=[0,1,2,3,4].map(level=>{
  const angle=Math.PI*(1.18+level*0.16);
  return {level,id:`gate-${level}`,x:Math.round(Math.cos(angle)*GATE_RADIUS*10)/10,z:Math.round(Math.sin(angle)*GATE_RADIUS*10)/10,radius:2.6};
@@ -52,8 +55,9 @@ export function createVillage(){
   // The flag by the landing spot is a checkpoint flag like any island's, so the child's drawing
   // flies on it the same way. The flag itself is drawn per checkpoint; this is its pole.
   cylinder('flag-home',VILLAGE_SPAWN.x-2,VILLAGE_SPAWN.z,.075,0,3.2,0xa58052),
-  ...gateProps(),
  ];
+ // Gates are solid like any prop, but the renderer draws them itself, lit in their colours.
+ const gates=gateProps();
  // A fence all the way round. Nothing here is meant to be survived, so the child simply
  // cannot walk off the edge and lose a heart in their own village.
  const FENCE=GREEN_RADIUS+1.5;
@@ -90,6 +94,7 @@ export function createVillage(){
   box('village-beach',0,0,GREEN_RADIUS*2+8,GREEN_RADIUS*2+8,-.1,-1.1,'beach'),
   ...trees.map(t=>cylinder(t.id,t.x,t.z,.28*t.scale,0,2.8*t.scale)),
   ...props,
+  ...gates,
   ...rocks.map(r=>cylinder(r.id,r.x,r.z,r.r*.88,-1,r.r*.5)),
  ];
  world.CAGE_SOLIDS=[];
