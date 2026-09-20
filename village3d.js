@@ -49,8 +49,9 @@ export function createVillage(){
   // spawn to the gates has to be clear, or they run straight into it.
   cylinder('signpost',-4.5,13,.22,0,3.4,0xa58052),
   prop('signpost-board',-4.5,13,3.2,.22,2.3,3.2,0xe8d7ab),
-  // The banner pole on the other side of the landing spot: the child's own drawing flies here.
-  cylinder('banner-pole',4.5,13,.1,0,4.8,0xa58052),
+  // The flag by the landing spot is a checkpoint flag like any island's, so the child's drawing
+  // flies on it the same way. The flag itself is drawn per checkpoint; this is its pole.
+  cylinder('flag-home',VILLAGE_SPAWN.x-2,VILLAGE_SPAWN.z,.075,0,3.2,0xa58052),
   ...gateProps(),
  ];
  // A fence all the way round. Nothing here is meant to be survived, so the child simply

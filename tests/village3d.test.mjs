@@ -133,3 +133,14 @@ test('the village fills with the friends the child rescued and the giants they b
  assert.equal(all.length,5);
  for(const statue of all)assert.equal(gateAt(statue.x,statue.z),null,`${statue.name} blocks a gate`);
 });
+
+test('every flag in every world has a pole to fly from',()=>{
+ // The flag is drawn per checkpoint by the renderer; the pole is a prop of the world. A world
+ // that lists a checkpoint without its pole shows a flag hanging in mid-air.
+ const worlds=[createVillage(),...[0,1,2,3,4].map(level=>new Adventure3D(null,{level}).world)];
+ for(const world of worlds)for(const c of world.CHECKPOINTS){
+  const pole=world.PROPS.find(p=>p.id===`flag-${c.id}`);
+  assert.ok(pole,`${world.meta.name}: checkpoint ${c.id} has no pole`);
+  assert.ok(Math.abs(pole.x-(c.x-2))<.01&&Math.abs(pole.z-c.z)<.01,`${world.meta.name}: the ${c.id} pole stands where the flag is drawn`);
+ }
+});

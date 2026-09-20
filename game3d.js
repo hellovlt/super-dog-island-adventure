@@ -253,7 +253,7 @@ function giantBossModel(){return giantFigure(game.level,theme.color,theme.scale)
 // The village remembers. Rescued friends live here, beaten giants stand in stone beside
 // the gate they guarded, and the child's drawing flies as a banner. All of it is read
 // from the campaign save as loaded; none of it is stored.
-const villagerViews=[],statueViews=[];let banner=null;
+const villagerViews=[],statueViews=[];
 if(inVillage()){
  for(const v of villagersFor(islandSave.progress)){
   const g=dogModel(v.color,.7);g.position.set(v.x,.1,v.z);g.rotation.y=v.facing;scene.add(g);
@@ -265,7 +265,6 @@ if(inVillage()){
   const figure=giantFigure(st.level,0xb5b1a3,1.7,true);figure.position.set(st.x,.6,st.z);figure.rotation.y=st.facing;scene.add(figure);
   statueViews.push({figure,statue:st});
  }
- const pole=group(4.5,0,13);banner=cube(0xf5c563,1.05,3.55,0,2.1,1.35,.04,pole);ball(0xffedb7,0,4.85,0,.14,pole);
 }
 function drawVillage(anim){
  if(!inVillage())return;
@@ -281,7 +280,6 @@ function drawVillage(anim){
   view.tag.hidden=!onScreen;
   if(onScreen){view.tag.style.left=`${(tagPoint.x*.5+.5)*innerWidth}px`;view.tag.style.top=`${(-tagPoint.y*.5+.5)*innerHeight}px`;}
  }
- if(banner){banner.material=drawing&&drawingMats?drawingMats.flag:mat(0xf5c563);banner.rotation.y=Math.sin(anim*2.2)*.12;}
 }
 // World weather: spores, snow, embers, or sparkles drift around Super Dog (one draw call).
 const weather=[null,{color:0xf7ffd9,count:140,vy:.35,size:.2},{color:0xffffff,count:320,vy:-1.4,size:.17},{color:0xffb35a,count:160,vy:1.1,size:.15},{color:0xfff3c4,count:120,vy:.2,size:.18}][game.level];
