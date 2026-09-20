@@ -65,8 +65,15 @@ export function waitingMessage({joined=false,friends=0,waitedMs=0}={}){
 }
 
 // Joins the room and keeps the roster; everything above stays testable without a network.
+// Which meeting points the game uses is decided by the app id alone, not by the code children
+// type, so every party everywhere shares one fixed set. Trystero's default of five is thin for
+// that: one of our five is already dead, and each one that dies later is a permanent loss no
+// player can work around. A wider set costs a few idle sockets and nothing else.
+export const RELAY_REDUNDANCY=9;
+export const roomConfig=()=>({appId:APP_ID,relayConfig:{redundancy:RELAY_REDUNDANCY}});
+
 export function joinParty(code,{look,onRoster,onBark,onJoin,onLeave,onError}={}){
- const room=joinRoom({appId:APP_ID},`sd-${normalizeCode(code)}`);
+ const room=joinRoom(roomConfig(),`sd-${normalizeCode(code)}`);
  const state=room.makeAction('pos'),looks=room.makeAction('look'),barks=room.makeAction('bark');
  const friends=new Map();
  const roster=()=>[...friends.entries()].map(([id,f])=>({id,...f}));

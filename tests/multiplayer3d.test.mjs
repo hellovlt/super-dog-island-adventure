@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {makeRoomCode,normalizeCode,isCompleteCode,formatCode,pickName,NAMES,CODE_ALPHABET,CODE_LENGTH,MAX_PLAYERS,
- packState,unpackState,packLook,unpackLook,easeRemote,shortestTurn,roomFull,waitingMessage,LONELY_AFTER} from '../multiplayer3d.js';
+ packState,unpackState,packLook,unpackLook,easeRemote,shortestTurn,roomFull,waitingMessage,LONELY_AFTER,roomConfig,RELAY_REDUNDANCY,APP_ID} from '../multiplayer3d.js';
 
 test('codes are easy to read aloud, type, and mistype',()=>{
  for(const confusing of ['O','0','I','1','L'])assert.ok(!CODE_ALPHABET.includes(confusing),`${confusing} is not in a child's code`);
@@ -57,4 +57,16 @@ test('a child who mistypes a code is told, instead of waiting alone forever',()=
  const ui=readFileSync(new URL('../game3d.js',import.meta.url),'utf8');
  assert.match(ui,/startParty\(typed,\{joined:true\}\)/,'joining is told apart from starting');
  assert.match(ui,/setTimeout\([^;]*roster\(\)\.length/,'and an empty island speaks up on its own');
+});
+test('a party is announced on enough meeting points to survive dead ones',async()=>{
+ const {defaultRelayUrls}=await import('../vendor/trystero/nostr.mjs');
+ const config=roomConfig();
+ assert.equal(config.appId,APP_ID);
+ assert.equal(config.relayConfig.redundancy,RELAY_REDUNDANCY,'the wider set is actually asked for');
+ assert.ok(RELAY_REDUNDANCY>5,'more than the library default, which leaves no spare for a dead relay');
+ assert.ok(RELAY_REDUNDANCY<=defaultRelayUrls.length,'never asks for more meeting points than exist');
+ assert.ok(RELAY_REDUNDANCY<=12,'idle sockets on a school tablet are not free');
+ // The set is a prefix of one fixed order, so a child on a cached older build still shares
+ // meeting points with a child on the newest one. A hand-picked list would strand them.
+ assert.equal(config.relayConfig.urls,undefined,'never replaces the list, only widens it');
 });

@@ -8,11 +8,11 @@ Tested against http://localhost:5173/ and the isolated playtest page, with the f
 
 | | Before | After |
 |---|---|---|
-| Health score | 72 / 100 | 95 / 100 |
-| Issues open | 6 | 0 |
-| Tests | 176 pass | 178 pass |
+| Health score | 72 / 100 | 96 / 100 |
+| Issues open | 7 | 0 |
+| Tests | 176 pass | 179 pass |
 
-Six issues found, six fixed, each committed on its own with a test that fails without the fix.
+Seven issues found, seven fixed, each committed on its own with a test that fails without the fix.
 
 ## Issues found and fixed
 
@@ -60,10 +60,24 @@ again." Commit 999fe7f.
   eight-player cap, duplicate-name handling, leaving.
 - Mobile layout at 390×844 and all five touch buttons.
 
+**ISSUE-007 — one of the game's five meeting points is dead, for everyone, permanently** (medium)
+
+First written up as "not a defect". That was wrong, and the correction matters: the relays that
+carry party invitations are chosen from the app id alone, not from the code children type, so
+every party in the game shares one fixed set of five. `relay.agorist.space` is the third of those
+five and answers 502. Every party everywhere has been running on four, and each relay that dies
+later is a permanent loss no player can work around, only a new deploy.
+
+The set is now nine of the twenty-eight available, so eight are healthy today. Measured on the
+pool: 25 of 28 up. Join time is unchanged: interleaved rounds at five, seven and nine relays
+averaged 4.2s, 4.5s and 4.5s, with more spread inside each setting than between them, so the
+extra sockets cost nothing a child can feel. The wider set is a prefix of the same fixed order,
+never a hand-picked list, so a child on a cached older build still meets one on the newest:
+verified live, the deployed build hosting and the new build joining, both sides seeing each
+other. Commit pending. `multiplayer3d.js`.
+
 ## Notes, not defects
 
-- One public relay in the bundled Trystero list (`relay.agorist.space`) answers 502. Joining
-  still works because several relays are used at once; nothing to fix in this repo.
 - The boss-island skip the player reported is covered by `tests/gate.test.mjs`: twenty-five
   glide approaches across five worlds, plus the legitimate bridge crossing.
 - WebGL driver warnings in the console come from the headless GPU, not from the game.
